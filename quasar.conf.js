@@ -187,6 +187,8 @@ module.exports = configure(function (/* ctx */) {
         // Windows only
         // win32metadata: { ... }
 
+        appCopyright: "Copyright (c) 2021 ghj1214kr",
+
         afterCopy: [
           (buildPath, electronVersion, platform, arch, callback) => {
             rebuild({ buildPath, electronVersion, arch })
