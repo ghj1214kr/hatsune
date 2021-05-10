@@ -338,9 +338,6 @@ export default defineComponent({
       if (mute.value) {
         mutedVolume.value = volume.value;
         volume.value = 0;
-      } else {
-        volume.value = mutedVolume.value;
-        mutedVolume.value = 0;
       }
 
       document.addEventListener("focusin", (event) => {
