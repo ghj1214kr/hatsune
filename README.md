@@ -1,4 +1,8 @@
 # Hatsune
+![Quasar Framework](https://img.shields.io/badge/Quasar-Framework-1976D2?style=flat-square&logo=quasar)
+![Vue 3](https://img.shields.io/badge/Vue.js-3-4FC08D?style=flat-square&logo=vue)
+![Github All Releases](https://img.shields.io/github/downloads/ghj1214kr/hatsune/total?color=39c5bb&style=flat-square)
+
 English | [한국어](https://github.com/ghj1214kr/hatsune/blob/main/README_ko.md)
 
 Desktop music player
