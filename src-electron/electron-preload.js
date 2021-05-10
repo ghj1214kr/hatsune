@@ -107,6 +107,12 @@ contextBridge.exposeInMainWorld("configAPI", {
   openDevTools() {
     ipcRenderer.send("openDevTools");
   },
+  async getVersion() {
+    return ipcRenderer.invoke("getVersion");
+  },
+  openGithubLink() {
+    ipcRenderer.send("openGithubLink");
+  },
 });
 
 contextBridge.exposeInMainWorld("clipboardAPI", {

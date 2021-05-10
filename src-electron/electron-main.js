@@ -656,6 +656,14 @@ ipcMain.on("openDevTools", () => {
   mainWindow.webContents.openDevTools();
 });
 
+ipcMain.handle("getVersion", () => {
+  return app.getVersion();
+});
+
+ipcMain.on("openGithubLink", () => {
+  shell.openExternal("https://github.com/ghj1214kr/hatsune");
+});
+
 ipcMain.handle("getLyric", async (event, path, title, artist) => {
   return {};
 });

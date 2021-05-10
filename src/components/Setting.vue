@@ -134,12 +134,21 @@
                       class="text-italic"
                       style="
                         transform: rotate(-14deg);
-                        padding-top: 20px;
+                        padding-top: 0px;
                         padding-right: 20px;
+                        margin-bottom: 20px;
                       "
                     >
                       Hatsune
                     </h1>
+                  </div>
+                  <div class="col">
+                    <h6 style="margin: 40px 0px 15px 0px;">
+                      {{ version }}
+                    </h6>
+                  </div>
+                  <div class="col">
+                    <q-btn @click="openGithubLink" no-caps flat label="github.com/ghj1214kr/hatsune" />
                   </div>
                 </div>
               </q-card-section>
@@ -194,6 +203,8 @@ export default defineComponent({
 
     const notify = ref(null);
 
+    const version = ref("");
+
     window.libraryAPI.libraryReady("libraryReady", () => {
       setTimeout(() => {
         store.commit("setLibraryReady", true);
@@ -230,6 +241,7 @@ export default defineComponent({
       const tempLang = await window.configAPI.getConfig("lang");
       locale.value = tempLang;
       lang.value = langOptions.value.find((l) => l.value === tempLang).label;
+      version.value = await window.configAPI.getVersion();
     }
 
     function hideDialog() {
@@ -285,6 +297,10 @@ export default defineComponent({
       window.configAPI.openDevTools();
     }
 
+    function openGithubLink() {
+      window.configAPI.openGithubLink();
+    }
+
     return {
       lang,
       langOptions,
@@ -302,6 +318,8 @@ export default defineComponent({
       returnSelf,
       changeLocale,
       openDevTools,
+      version,
+      openGithubLink,
     };
   },
 });
