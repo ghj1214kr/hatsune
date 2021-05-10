@@ -53,7 +53,7 @@ quasar dev -m electron
 quasar build -m electron
 ```
 
-### If an error related to better-sqlite3 occurs
+### If get an error related to `better-sqlite3`
 ```bash
-./node_modules/.bin/electron-rebuild.cmd
+./node_modules/.bin/electron-rebuild
 ```
