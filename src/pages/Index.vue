@@ -40,6 +40,7 @@
         <div class="col-1 row" style="padding-top: 5px">
           <div class="col-4 row justify-evenly items-center">
             <q-btn
+              tabindex="-1"
               flat
               round
               class="col-4"
@@ -65,14 +66,29 @@
           <q-space class="q-electron-drag" />
           <div class="q-px-xs row justify-evenly items-center">
             <q-btn
+              tabindex="-1"
               @click="settingDialogShow"
               flat
               round
               color="white"
               icon="settings"
             />
-            <q-btn @click="minimize" flat round color="white" icon="remove" />
-            <q-btn @click="close" flat round color="white" icon="close" />
+            <q-btn
+              tabindex="-1"
+              @click="minimize"
+              flat
+              round
+              color="white"
+              icon="remove"
+            />
+            <q-btn
+              tabindex="-1"
+              @click="close"
+              flat
+              round
+              color="white"
+              icon="close"
+            />
           </div>
         </div>
       </div>
@@ -341,7 +357,7 @@ export default defineComponent({
       }
 
       document.addEventListener("focusin", (event) => {
-        if (event.target.attributes.getNamedItem("draggable") === null) {
+        if (event.target.tabIndex === -1) {
           event.target.blur();
         }
       });

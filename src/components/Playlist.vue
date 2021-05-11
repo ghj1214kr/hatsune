@@ -25,6 +25,12 @@
             @dragover.prevent
             @drop.prevent="dropOnTab"
             class="q-px-sm"
+            :style="{
+              'background-color':
+                element.name === playingPlaylistName
+                  ? 'rgba(255, 255, 255, .2)'
+                  : 'rgba(255, 255, 255, .0)',
+            }"
           >
             <q-menu
               v-if="element.name !== 'library'"
@@ -178,6 +184,10 @@ export default defineComponent({
         store.commit("setSelectedPlaylistName", value);
       },
     });
+
+    const playingPlaylistName = computed(
+      () => store.getters["getPlayingPlaylistName"]
+    );
 
     const renamePlaylistDialog = ref(false);
     const playlistNameToRename = ref("");
@@ -372,6 +382,7 @@ export default defineComponent({
     return {
       playlists,
       selectedPlaylistName,
+      playingPlaylistName,
       renamePlaylistDialog,
       removePlaylistDialog,
       playlistNameToRename,
