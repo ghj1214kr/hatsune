@@ -64,7 +64,23 @@ let libraryPathChanged = false;
 init();
 
 async function init() {
-  database = new Database("database.db"); // { verbose: console.log }
+  switch (process.platform) {
+    case "darwin": {
+      const tempPath = path.join(
+        process.env.HOME,
+        "Library",
+        "Application Support",
+        "Hatsune",
+        "database.db"
+      );
+      database = new Database(tempPath);
+      break;
+    }
+    case "win32": {
+      database = new Database("database.db");
+      break;
+    }
+  }
 
   database
     .prepare(
