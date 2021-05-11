@@ -1,4 +1,7 @@
 # Hatsune
+![Quasar Framework](https://img.shields.io/badge/Quasar-Framework-1976D2?style=flat-square&logo=quasar)
+![Github All Releases](https://img.shields.io/github/downloads/ghj1214kr/hatsune/total?color=39c5bb&style=flat-square)
+
 [English](https://github.com/ghj1214kr/hatsune#readme) | 한국어
 
 데스크탑 음악 플레이어
@@ -53,7 +56,7 @@ quasar dev -m electron
 quasar build -m electron
 ```
 
-### If an error related to better-sqlite3 occurs
+### If get an error related to `better-sqlite3`
 ```bash
-./node_modules/.bin/electron-rebuild.cmd
+./node_modules/.bin/electron-rebuild
 ```
