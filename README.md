@@ -57,6 +57,7 @@ quasar build -m electron
 ```
 
 ### If get an error related to `better-sqlite3`
+`./node_modules/better-sqlite3/build/Release/better_sqlite3.node` exists, delete it first.
 ```bash
 ./node_modules/.bin/electron-rebuild
 ```

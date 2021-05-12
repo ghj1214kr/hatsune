@@ -41,22 +41,23 @@
 
 <kbd>Ctrl</kbd> + <kbd>R</kbd>를 누르세요. 플레이어가 새로고침 됩니다.
 
-## Install the dependencies
+## 의존성 설치
 ```bash
 yarn
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### 개발 모드로 시작 (hot-code reloading, error reporting, etc.)
 ```bash
 quasar dev -m electron
 ```
 
-### Build the app for production
+### 빌드
 ```bash
 quasar build -m electron
 ```
 
-### If get an error related to `better-sqlite3`
+### `better-sqlite3`와 관련된 오류가 발생한 경우
+`./node_modules/better-sqlite3/build/Release/better_sqlite3.node`가 존재하면 먼저 삭제
 ```bash
 ./node_modules/.bin/electron-rebuild
 ```
