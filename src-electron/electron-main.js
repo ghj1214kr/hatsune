@@ -520,12 +520,10 @@ function getLibrary() {
     .all()
     .map((obj) => obj.path);
 
-  // 라이브러리가 비었으면 빈 배열 반환
   if (library.length === 0) {
     return [];
   }
 
-  // 라이브러리로 지정된 경로 목록을 가져옴
   const libraryPaths = database
     .prepare("SELECT path FROM libraryPaths")
     .all()
@@ -533,7 +531,7 @@ function getLibrary() {
 
   const libraryGroupByPaths = {};
 
-  // 라이브러리 목록에 따라 라이브러리를 분류
+  // classify path of libraries according to library list
   for (const libraryPath of libraryPaths) {
     libraryGroupByPaths[path.basename(libraryPath)] = library.filter((x) =>
       x.includes(libraryPath)
@@ -543,7 +541,7 @@ function getLibrary() {
   const libraryResult = [];
 
   for (const libraryName in libraryGroupByPaths) {
-    //  등록된 라이브러리 경로 안에 음악이 없으면 건너뜀
+    // skip if there is no music in the registered library path
     if (libraryGroupByPaths[libraryName].length === 0) {
       continue;
     }
@@ -551,7 +549,7 @@ function getLibrary() {
     const result = [];
     const level = { result };
 
-    // 경로를 트리로 구성
+    // organize the path into a tree
     libraryGroupByPaths[libraryName].forEach((track) => {
       track.split(path.sep).reduce((r, text) => {
         if (!r[text]) {
@@ -572,7 +570,7 @@ function getLibrary() {
       }, level);
     });
 
-    // 불필요 상위 디렉토리 제거
+    // remove unnecessary parent directories
     let temp = result[0];
     while (temp.children[0].children.length === 1) {
       temp = temp.children[0];
@@ -620,7 +618,7 @@ ipcMain.handle("getSelectedLibrary", (event, selectedLibraryPath) => {
     path.dirname(selectedLibrary[maxIndex].path) +
     selectedLibrary[maxIndex].album;
 
-  // 앨범 첫 부분에 앨범 헤더 끼워넣기
+  // insert album header at the beginning of the album
   for (let index = selectedLibrary.length - 1; index >= 0; index--) {
     const currentPathAndAlbum =
       path.dirname(selectedLibrary[index].path) + selectedLibrary[index].album;
