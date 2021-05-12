@@ -229,7 +229,7 @@ export default defineComponent({
         return;
       }
       if (first.value) {
-        audio.muted = true;
+        audio.volume = 0;
       }
       audio.src = `file-protocol://${track.path.replaceAll("\%", "%25")}`;
 
@@ -240,7 +240,7 @@ export default defineComponent({
             if (first.value) {
               audio.pause();
               first.value = false;
-              audio.muted = false;
+              audio.volume = volume.value / 100;
               audio.currentTime = 0;
               store.commit("setPosition", 0);
             }
@@ -332,6 +332,7 @@ export default defineComponent({
           const path = await window.configAPI.getConfig("playingPath");
           index = tracks.findIndex((t) => t.path === path);
         } catch (error) {
+          control.log("???");
         } finally {
           if (index !== -1) {
             store.commit("setPlayingList", {
