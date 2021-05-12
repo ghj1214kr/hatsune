@@ -1,7 +1,7 @@
 <template>
   <div class="full-width row justify-evenly">
     <q-btn
-      tabindex="-1"
+      tabindex="-2"
       class="button"
       size="30px"
       flat
@@ -11,7 +11,7 @@
       @click="toggleLoop"
     />
     <q-btn
-      tabindex="-1"
+      tabindex="-2"
       class="button"
       size="30px"
       flat
@@ -21,7 +21,7 @@
       @click="toPreviousTrack"
     />
     <q-btn
-      tabindex="-1"
+      tabindex="-2"
       class="button"
       size="30px"
       flat
@@ -31,7 +31,7 @@
       @click="togglePlaying"
     />
     <q-btn
-      tabindex="-1"
+      tabindex="-2"
       class="button"
       size="30px"
       flat
@@ -41,7 +41,7 @@
       @click="toNextTrack"
     />
     <q-btn
-      tabindex="-1"
+      tabindex="-2"
       class="button"
       size="30px"
       flat

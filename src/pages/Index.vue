@@ -40,7 +40,7 @@
         <div class="col-1 row" style="padding-top: 5px">
           <div class="col-4 row justify-evenly items-center">
             <q-btn
-              tabindex="-1"
+              tabindex="-2"
               flat
               round
               class="col-4"
@@ -51,6 +51,7 @@
             />
             <div class="col-8">
               <vue-slider
+                tabindex="-2"
                 id="volume"
                 class="col-8"
                 v-model="volume"
@@ -66,7 +67,7 @@
           <q-space class="q-electron-drag" />
           <div class="q-px-xs row justify-evenly items-center">
             <q-btn
-              tabindex="-1"
+              tabindex="-2"
               @click="settingDialogShow"
               flat
               round
@@ -74,7 +75,7 @@
               icon="settings"
             />
             <q-btn
-              tabindex="-1"
+              tabindex="-2"
               @click="minimize"
               flat
               round
@@ -82,7 +83,7 @@
               icon="remove"
             />
             <q-btn
-              tabindex="-1"
+              tabindex="-2"
               @click="close"
               flat
               round
@@ -361,9 +362,15 @@ export default defineComponent({
         volume.value = 0;
       }
 
-      document.addEventListener("focusin", (event) => {
-        if (event.target.tabIndex === -1) {
+      window.addEventListener("focusin", (event) => {
+        if (event.target.tabIndex === -2) {
           event.target.blur();
+        }
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Tab") {
+          event.preventDefault();
         }
       });
 
