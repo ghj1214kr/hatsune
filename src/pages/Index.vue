@@ -227,7 +227,9 @@ export default defineComponent({
         coverArt.value = "";
         return;
       }
-
+      if (first.value) {
+        audio.muted = true;
+      }
       audio.src = `file-protocol://${track.path.replaceAll("\%", "%25")}`;
 
       try {
@@ -237,6 +239,9 @@ export default defineComponent({
             if (first.value) {
               audio.pause();
               first.value = false;
+              audio.muted = false;
+              audio.currentTime = 0;
+              store.commit("setPosition", 0);
             }
           })
           .catch((error) => {
