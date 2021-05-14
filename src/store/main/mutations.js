@@ -97,7 +97,9 @@ export function setPlayingList(state, { playlistName, index }) {
 }
 
 export function toPreviousTrack(state) {
-  if (state.playingIndex <= 0) {
+  if (state.playingList.length === 1) {
+    this.commit("toggleBackToStart");
+  } else if (state.playingIndex <= 0) {
     if (state.shuffle) {
       const tempArray1 = state.playingIndexList.slice();
       const tempArray2 = [...Array(state.playingList.length).keys()].filter(
@@ -119,7 +121,9 @@ export function toPreviousTrack(state) {
 }
 
 export function toNextTrack(state) {
-  if (state.playingIndex >= state.playingIndexList.length - 1) {
+  if (state.playingList.length === 1) {
+    this.commit("toggleBackToStart");
+  } else if (state.playingIndex >= state.playingIndexList.length - 1) {
     if (state.shuffle) {
       const tempArray1 = state.playingIndexList.slice();
       const tempArray2 = [...Array(state.playingList.length).keys()].filter(
