@@ -26,4 +26,8 @@ export default {
   libraryUpdateComplete: "라이브러리 갱신 완료",
   playbackError: "음원 재생에 오류가 발생했습니다.",
   details: "자세히",
+  update: "업데이트",
+  checkUpdateOnStartup: "시작할 때 업데이트 확인",
+  updateAvailable: "{latestVersion} 버전으로 업데이트가 가능합니다.",
+  openDownloadPage: "다운로드 페이지 열기",
 };

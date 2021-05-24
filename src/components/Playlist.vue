@@ -84,7 +84,6 @@
         v-for="playlist in playlists"
         :name="playlist.name"
         :key="playlist.name"
-        v-model:playlistNameProp="playlist.name"
       />
     </q-tab-panels>
     <q-separator />
@@ -185,9 +184,14 @@ export default defineComponent({
       },
     });
 
-    const playingPlaylistName = computed(
-      () => store.getters["getPlayingPlaylistName"]
-    );
+    const playingPlaylistName = computed({
+      get() {
+        return store.getters["getPlayingPlaylistName"];
+      },
+      set(value) {
+        store.commit("setPlayingPlaylistName", value);
+      },
+    });
 
     const renamePlaylistDialog = ref(false);
     const playlistNameToRename = ref("");
@@ -258,6 +262,10 @@ export default defineComponent({
           timeout: 3000,
         });
         return;
+      }
+
+      if (playlistNameToRename.value === playingPlaylistName.value) {
+        playingPlaylistName.value = newPlaylistName.value;
       }
 
       if (playlistNameToRename.value === selectedPlaylistName.value) {

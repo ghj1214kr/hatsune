@@ -18,6 +18,8 @@ import Database from "better-sqlite3";
 import SyncMusicDb from "sync-music-db-bs3";
 import Store from "electron-store";
 import fs from "fs";
+import semver from "semver";
+import { Octokit } from "@octokit/rest";
 
 try {
   if (
@@ -33,6 +35,7 @@ const audioExtensionsString = audioExtensions.join("|");
 const store = new Store({
   defaults: {
     lang: "en-US",
+    checkUpdateOnStartup: true,
     loop: false,
     shuffle: false,
     volume: 50,
@@ -52,6 +55,10 @@ const config = {};
 const collator = new Intl.Collator("ja", {
   numeric: true,
   sensitivity: "base",
+});
+
+const octokit = new Octokit({
+  userAgent: "ghj1214kr/hatsune v" + app.getVersion(),
 });
 
 let mainWindow;
@@ -674,9 +681,28 @@ ipcMain.handle("getVersion", () => {
   return app.getVersion();
 });
 
-ipcMain.on("openGithubLink", () => {
+ipcMain.on("openGithubPage", () => {
   shell.openExternal("https://github.com/ghj1214kr/hatsune");
 });
+
+ipcMain.handle("updateCheck", async () => {
+  try {
+    const res = await octokit.rest.repos.getLatestRelease({
+      owner: "ghj1214kr",
+      repo: "hatsune",
+    });
+    return {
+      available: semver.gt(res.data.tag_name, app.getVersion()),
+      latestVersion: res.data.tag_name,
+    };
+  } catch (error) {
+    return { available: false, latestVersion: app.getVersion() };
+  }
+});
+
+ipcMain.on("openLatestReleasePage", () => {
+  shell.openExternal("https://github.com/ghj1214kr/hatsune/releases/latest");
+})
 
 ipcMain.handle("getLyric", async (event, path, title, artist) => {
   return {};

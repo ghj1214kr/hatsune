@@ -343,6 +343,35 @@ export default defineComponent({
             first.value = false;
           }
         }
+
+        const checkUpdateOnStartup = await window.configAPI.getConfig(
+          "checkUpdateOnStartup"
+        );
+
+        if (checkUpdateOnStartup) {
+          const updateInfo = await window.configAPI.updateCheck();
+
+          if (updateInfo.available) {
+            $q.notify({
+              icon: "upgrade",
+              type: "info",
+              message: $t("updateAvailable", {
+                latestVersion: updateInfo.latestVersion,
+              }),
+              timeout: 0,
+              actions: [
+                {
+                  label: $t("openDownloadPage"),
+                  color: "white",
+                  handler: () => {
+                    window.configAPI.openLatestReleasePage();
+                  },
+                },
+                { label: $t("ok"), color: "white" },
+              ],
+            });
+          }
+        }
       }
     });
 

@@ -103,11 +103,29 @@
                 </q-card-section>
                 <q-card-section class="q-pa-sm">
                   <q-select
+                    class="q-px-md"
                     dense
                     v-model="lang"
                     :options="langOptions"
                     @update:model-value="changeLocale"
                   />
+                </q-card-section>
+              </q-card-section>
+              <q-card-section class="q-pa-sm">
+                <q-card-section class="q-pa-sm">
+                  <div class="text-h4">{{ $t("update") }}</div>
+                </q-card-section>
+                <q-card-section class="q-pa-sm">
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>{{
+                        $t("checkUpdateOnStartup")
+                      }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section avatar>
+                      <q-toggle v-model="checkUpdateOnStartup" @update:model-value="changeUpdateCheckOption"/>
+                    </q-item-section>
+                  </q-item>
                 </q-card-section>
               </q-card-section>
               <q-card-section class="q-pa-sm">
@@ -143,12 +161,17 @@
                     </h1>
                   </div>
                   <div class="col">
-                    <h6 style="margin: 40px 0px 15px 0px;">
+                    <h6 style="margin: 40px 0px 15px 0px">
                       {{ version }}
                     </h6>
                   </div>
                   <div class="col">
-                    <q-btn @click="openGithubLink" no-caps flat label="github.com/ghj1214kr/hatsune" />
+                    <q-btn
+                      @click="openGithubPage"
+                      no-caps
+                      flat
+                      label="github.com/ghj1214kr/hatsune"
+                    />
                   </div>
                 </div>
               </q-card-section>
@@ -201,6 +224,8 @@ export default defineComponent({
     const libraryChanged = ref(false);
     const libraryApplied = ref(false);
 
+    const checkUpdateOnStartup = ref(false);
+
     const notify = ref(null);
 
     const version = ref("");
@@ -242,6 +267,9 @@ export default defineComponent({
       locale.value = tempLang;
       lang.value = langOptions.value.find((l) => l.value === tempLang).label;
       version.value = await window.configAPI.getVersion();
+      checkUpdateOnStartup.value = await window.configAPI.getConfig(
+        "checkUpdateOnStartup"
+      );
     }
 
     function hideDialog() {
@@ -293,12 +321,16 @@ export default defineComponent({
       window.configAPI.setConfig("lang", lang.value);
     }
 
+    function changeUpdateCheckOption(value) {
+      window.configAPI.setConfig("checkUpdateOnStartup", value);
+    }
+
     function openDevTools() {
       window.configAPI.openDevTools();
     }
 
-    function openGithubLink() {
-      window.configAPI.openGithubLink();
+    function openGithubPage() {
+      window.configAPI.openGithubPage();
     }
 
     return {
@@ -317,9 +349,11 @@ export default defineComponent({
       applyChange,
       returnSelf,
       changeLocale,
+      checkUpdateOnStartup,
+      changeUpdateCheckOption,
       openDevTools,
       version,
-      openGithubLink,
+      openGithubPage,
     };
   },
 });

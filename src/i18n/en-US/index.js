@@ -26,4 +26,8 @@ export default {
   libraryUpdateComplete: "Library update complete",
   playbackError: "Playback error occurred",
   details: "Details",
+  update: "Update",
+  checkUpdateOnStartup: "Check update on startup",
+  updateAvailable: "{latestVersion} version update is available.",
+  openDownloadPage: "Open Download Page",
 };

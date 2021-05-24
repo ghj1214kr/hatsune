@@ -69,6 +69,10 @@ export function setCoverArtData(state, coverArtData) {
   state.coverArtData = coverArtData;
 }
 
+export function setPlayingPlaylistName(state, playingPlaylistName) {
+  state.playingPlaylistName = playingPlaylistName;
+}
+
 export function setPlayingList(state, { playlistName, index }) {
   state.playingPlaylistName = playlistName;
   state.playingList =

@@ -110,8 +110,14 @@ contextBridge.exposeInMainWorld("configAPI", {
   async getVersion() {
     return ipcRenderer.invoke("getVersion");
   },
-  openGithubLink() {
-    ipcRenderer.send("openGithubLink");
+  openGithubPage() {
+    ipcRenderer.send("openGithubPage");
+  },
+  async updateCheck() {
+    return ipcRenderer.invoke("updateCheck");
+  },
+  openLatestReleasePage() {
+    ipcRenderer.send("openLatestReleasePage");
   },
 });
 
