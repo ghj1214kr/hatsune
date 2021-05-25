@@ -62,21 +62,43 @@
         >
       </q-item-section>
       <q-menu touch-position context-menu>
-        <q-list dense>
+        <q-list>
           <q-item
+            class="q-px-sm q-py-none"
             clickable
             v-close-popup
             @click="openPathInDirectory(track.path)"
+            style="min-height: 40px;"
           >
+            <q-item-section avatar>
+              <q-icon name="folder_open" />
+            </q-item-section>
             <q-item-section>{{ $t("viewInFileExplorer") }}</q-item-section>
           </q-item>
           <q-item
+            class="q-px-sm q-py-none"
             v-if="playlistName !== 'library'"
             clickable
             v-close-popup
             @click="removeTrackFromPlaylist(track.path)"
+            style="min-height: 40px;"
           >
+            <q-item-section avatar>
+              <q-icon name="delete" />
+            </q-item-section>
             <q-item-section>{{ $t("remove") }}</q-item-section>
+          </q-item>
+          <q-item
+            class="q-px-sm q-py-none"
+            clickable
+            v-close-popup
+            @click="showTrackPropertiesDialog(track.path)"
+            style="min-height: 40px;"
+          >
+            <q-item-section avatar>
+              <q-icon name="info" />
+            </q-item-section>
+            <q-item-section>{{ $t("properties") }}</q-item-section>
           </q-item>
         </q-list>
       </q-menu>
@@ -136,6 +158,12 @@ export default defineComponent({
       );
     }
 
+    async function showTrackPropertiesDialog(path) {
+      const metadata = await window.metadataAPI.getMetadataForProperties(path);
+      store.commit("setTrackPropertiesDialogData", metadata);
+      store.commit("setTrackPropertiesDialog", true);
+    }
+
     function setDragAndDropData(event) {
       event.dataTransfer.setData(
         "json",
@@ -170,6 +198,7 @@ export default defineComponent({
       durationStr,
       openPathInDirectory,
       removeTrackFromPlaylist,
+      showTrackPropertiesDialog,
       setDragAndDropData,
       startPlay,
     };
@@ -180,6 +209,7 @@ export default defineComponent({
 <style scoped>
 .q-item__section--avatar {
   min-width: 0px;
+  padding-right: 8px;
 }
 .durationClass {
   padding-left: 0px;

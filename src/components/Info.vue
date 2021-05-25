@@ -35,13 +35,17 @@
 </template>
 
 <script>
+import { useQuasar } from "quasar";
 import { defineComponent, ref, computed, watch } from "vue";
 import { useStore } from "vuex";
+import { useI18n } from "vue-i18n";
 
 export default defineComponent({
   name: "InfoComponent",
   setup() {
     const store = useStore();
+    const $q = useQuasar();
+    const { t: $t } = useI18n();
 
     const track = computed(() => store.getters["getPlayingTrack"]);
     const infoChanged = computed(() => store.getters["getInfoChanged"]);
@@ -105,6 +109,13 @@ export default defineComponent({
       window.clipboardAPI.setTextToClipboard(
         [track.value.title, track.value.artist, track.value.album].join(" ")
       );
+
+      $q.notify({
+        icon: "content_copy",
+        type: "info",
+        message: $t("copiedToClipboard"),
+        timeout: 3000,
+      });
     }
 
     return {

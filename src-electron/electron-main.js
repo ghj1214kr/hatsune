@@ -36,6 +36,11 @@ const store = new Store({
   defaults: {
     lang: "en-US",
     checkUpdateOnStartup: true,
+    backgroundColor: {
+      angle: 30,
+      startColor: "#c53988",
+      endColor: "#39c5bb",
+    },
     loop: false,
     shuffle: false,
     volume: 50,
@@ -225,17 +230,15 @@ function getMetadata(track) {
     musicMetadata
       .parseFile(track.path, { duration: true, skipCovers: true })
       .then((metadata) => {
-        const trackObject = {};
-        trackObject.title =
-          metadata.common.title === undefined
-            ? path.basename(track.path)
-            : metadata.common.title;
-        trackObject.artist = metadata.common.artist;
-        trackObject.album = metadata.common.album;
-        trackObject.duration = Math.round(metadata.format.duration);
-        trackObject.path = track.path;
-        trackObject.mtime = fs.statSync(track.path).mtime.getTime();
-        trackObject.playlist = track.playlist;
+        const trackObject = {
+          title: metadata.common.title ?? path.basename(track.path),
+          artist: metadata.common.artists?.join(","),
+          album: metadata.common.album,
+          duration: Math.round(metadata.format.duration),
+          path: track.path,
+          mtime: fs.statSync(track.path).mtime.getTime(),
+          playlist: track.playlist,
+        };
         resolve(trackObject);
       });
   });
@@ -253,18 +256,14 @@ ipcMain.handle("getMetadata", (event, tracks) => {
 ipcMain.handle("getMetadataWithCoverArt", async (event, trackPath) => {
   try {
     const metadata = await musicMetadata.parseFile(trackPath);
-    const trackObject = {};
-
-    trackObject.title =
-      metadata.common.title === undefined
-        ? path.basename(trackPath)
-        : metadata.common.title;
-    trackObject.artist = metadata.common.artist;
-    trackObject.album = metadata.common.album;
-    trackObject.duration = Math.round(metadata.format.duration);
-    trackObject.path = trackPath;
-    trackObject.mtime = fs.statSync(trackPath).mtime.getTime();
-
+    const trackObject = {
+      title: metadata.common.title ?? path.basename(trackPath),
+      artist: metadata.common.artists?.join(","),
+      album: metadata.common.album,
+      duration: Math.round(metadata.format.duration),
+      path: trackPath,
+      mtime: fs.statSync(trackPath).mtime.getTime(),
+    };
     if (metadata.common.picture) {
       const coverArtData = `data:${
         metadata.common.picture[0].format
@@ -294,6 +293,34 @@ ipcMain.handle("getMetadataWithCoverArt", async (event, trackPath) => {
   } catch (error) {
     return {};
   }
+});
+
+ipcMain.handle("getMetadataForProperties", async (event, trackPath) => {
+  const metadata = await musicMetadata.parseFile(trackPath, {
+    duration: true,
+    skipCovers: true,
+  });
+  const trackObject = {
+    title: metadata.common.title,
+    artist: metadata.common.artists?.join(","),
+    albumartist: metadata.common.albumartist,
+    album: metadata.common.album,
+    year: metadata.common.year,
+    track_no: metadata.common.track.no,
+    disk_no: metadata.common.disk.no,
+    genre: metadata.common.genre,
+    composer: metadata.common.composer,
+    duration: Math.round(metadata.format.duration),
+    tagTypes: metadata.format.tagTypes?.join(","),
+    lossless: metadata.format.lossless,
+    container: metadata.format.container,
+    codec: metadata.format.codec,
+    sampleRate: metadata.format.sampleRate,
+    bitrate: metadata.format.bitrate / 1000,
+    codecProfile: metadata.format.codecProfile,
+    path: trackPath,
+  };
+  return trackObject;
 });
 
 ipcMain.handle("getAllPlaylists", () => {
@@ -332,7 +359,7 @@ ipcMain.on("addTracksToPlaylist", (event, playlistName, tracks) => {
         playlistName,
         track.path,
         track.mtime,
-        track.title === undefined ? path.basename(track.path) : track.title,
+        track.title ?? path.basename(track.path),
         track.artist,
         track.album,
         track.duration
@@ -523,9 +550,8 @@ function sortTree(node) {
 
 function getLibrary() {
   const library = database
-    .prepare("SELECT path FROM library")
-    .all()
-    .map((obj) => obj.path);
+    .prepare("SELECT path, title, artist, album FROM library")
+    .all();
 
   if (library.length === 0) {
     return [];
@@ -541,7 +567,7 @@ function getLibrary() {
   // classify path of libraries according to library list
   for (const libraryPath of libraryPaths) {
     libraryGroupByPaths[path.basename(libraryPath)] = library.filter((x) =>
-      x.includes(libraryPath)
+      x.path.includes(libraryPath)
     );
   }
 
@@ -558,17 +584,19 @@ function getLibrary() {
 
     // organize the path into a tree
     libraryGroupByPaths[libraryName].forEach((track) => {
-      track.split(path.sep).reduce((r, text) => {
+      track.path.split(path.sep).reduce((r, text) => {
         if (!r[text]) {
           const tempPath =
             (r.path === undefined ? "" : r.path + path.sep) + text;
           r[text] = {
             result: [],
             path: tempPath,
+            meta: [tempPath, track.title, track.artist, track.album].join(","),
           };
           r.result.push({
             text,
             path: tempPath,
+            meta: [tempPath, track.title, track.artist, track.album].join(","),
             children: r[text].result,
           });
         }
@@ -702,7 +730,7 @@ ipcMain.handle("updateCheck", async () => {
 
 ipcMain.on("openLatestReleasePage", () => {
   shell.openExternal("https://github.com/ghj1214kr/hatsune/releases/latest");
-})
+});
 
 ipcMain.handle("getLyric", async (event, path, title, artist) => {
   return {};

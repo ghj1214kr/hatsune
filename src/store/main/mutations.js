@@ -354,3 +354,16 @@ export function settingDialogShow(state, show) {
 export function setLibraryReady(state, ready) {
   state.libraryReady = ready;
 }
+
+export function setBackgroundColor(state, backgroundColor) {
+  state.backgroundColor = backgroundColor;
+}
+
+// trackProperties
+export function setTrackPropertiesDialog(state, show) {
+  state.trackPropertiesDialog = show;
+}
+
+export function setTrackPropertiesDialogData(state, trackMetaData) {
+  state.trackPropertiesDialogData = trackMetaData;
+}

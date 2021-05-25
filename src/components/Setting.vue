@@ -60,7 +60,6 @@
                           <q-item-section>{{ element }}</q-item-section>
                           <q-btn
                             icon="delete"
-                            text-color="dark"
                             flat
                             padding="xs"
                             @click="removePathFromLibrary(element)"
@@ -81,7 +80,7 @@
                     flat
                     icon="check"
                     :label="$t('apply')"
-                    @click="applyChange"
+                    @click="applyLibraryChange"
                   >
                     <q-badge v-if="libraryChanged" color="info" floating>
                       <q-icon
@@ -97,6 +96,7 @@
                   <q-spinner size="50px" color="dark" />
                 </q-inner-loading>
               </q-card-section>
+
               <q-card-section class="q-pa-sm">
                 <q-card-section class="q-pa-sm">
                   <div class="text-h4">{{ $t("language") }}</div>
@@ -111,6 +111,96 @@
                   />
                 </q-card-section>
               </q-card-section>
+
+              <q-card-section
+                class="text-white q-pa-sm"
+                :style="{
+                  background:
+                    'linear-gradient(' +
+                    backgroundColorAngle +
+                    'deg, ' +
+                    backgroundStartColor +
+                    ', ' +
+                    backgroundEndColor +
+                    ')',
+                }"
+              >
+                <q-card-section class="q-pa-sm">
+                  <div class="text-h4">{{ $t("defaultBackgroundColor") }}</div>
+                </q-card-section>
+                <q-card-section class="q-pa-sm row no-wrap">
+                  <q-input
+                    color="white"
+                    dark
+                    v-model="backgroundColorAngle"
+                    type="number"
+                    :label="$t('angle')"
+                    :rules="[
+                      (val) => (val >= 0 && val <= 359) || $t('use0to359'),
+                    ]"
+                    min="0"
+                    max="359"
+                  />
+                  <q-input
+                    color="white"
+                    dark
+                    filled
+                    v-model="backgroundStartColor"
+                    format-model="hex"
+                    :rules="['hexColor']"
+                    :label="$t('startColor')"
+                  >
+                    <template v-slot:append>
+                      <q-icon name="colorize" class="cursor-pointer">
+                        <q-popup-proxy>
+                          <q-color no-header v-model="backgroundStartColor" />
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                  <q-input
+                    color="white"
+                    dark
+                    filled
+                    v-model="backgroundEndColor"
+                    format-model="hex"
+                    :rules="['hexColor']"
+                    :label="$t('endColor')"
+                  >
+                    <template v-slot:append>
+                      <q-icon name="colorize" class="cursor-pointer">
+                        <q-popup-proxy>
+                          <q-color no-header v-model="backgroundEndColor" />
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                </q-card-section>
+                <q-card-actions align="right">
+                  <q-btn
+                    flat
+                    icon="settings_backup_restore"
+                    :label="$t('default')"
+                    @click="setToDefaultColor"
+                  />
+                  <q-btn
+                    flat
+                    icon="check"
+                    :label="$t('apply')"
+                    @click="applyColorChange"
+                  >
+                    <q-badge v-if="libraryChanged" color="info" floating>
+                      <q-icon
+                        name="pending_actions"
+                        size="0.75rem"
+                        color="white"
+                        class=""
+                      />
+                    </q-badge>
+                  </q-btn>
+                </q-card-actions>
+              </q-card-section>
+
               <q-card-section class="q-pa-sm">
                 <q-card-section class="q-pa-sm">
                   <div class="text-h4">{{ $t("update") }}</div>
@@ -123,11 +213,15 @@
                       }}</q-item-label>
                     </q-item-section>
                     <q-item-section avatar>
-                      <q-toggle v-model="checkUpdateOnStartup" @update:model-value="changeUpdateCheckOption"/>
+                      <q-toggle
+                        v-model="checkUpdateOnStartup"
+                        @update:model-value="changeUpdateCheckOption"
+                      />
                     </q-item-section>
                   </q-item>
                 </q-card-section>
               </q-card-section>
+
               <q-card-section class="q-pa-sm">
                 <q-card-section class="q-pa-sm">
                   <div class="text-h4">{{ $t("etc") }}</div>
@@ -199,7 +293,7 @@ export default defineComponent({
   setup() {
     const $q = useQuasar();
     const store = useStore();
-    const { locale, t: $t } = useI18n({ useScope: "global" });
+    const { locale, t: $t } = useI18n();
 
     const lang = ref("");
     const langOptions = ref([
@@ -223,6 +317,14 @@ export default defineComponent({
     const libraryPaths = ref([]);
     const libraryChanged = ref(false);
     const libraryApplied = ref(false);
+
+    const backgroundColor = computed(
+      () => store.getters["getBackgroundColor"]
+    );
+
+    const backgroundColorAngle = ref(0);
+    const backgroundStartColor = ref("");
+    const backgroundEndColor = ref("");
 
     const checkUpdateOnStartup = ref(false);
 
@@ -289,9 +391,12 @@ export default defineComponent({
       libraryPaths.value = await window.libraryAPI.getLibraryPaths();
       libraryChanged.value = false;
       libraryApplied.value = false;
+      backgroundColorAngle.value = backgroundColor.value.angle;
+      backgroundStartColor.value = backgroundColor.value.startColor;
+      backgroundEndColor.value = backgroundColor.value.endColor;
     }
 
-    function applyChange() {
+    function applyLibraryChange() {
       if (libraryChanged.value) {
         store.commit("setLibraryReady", false);
         window.libraryAPI.setLibraryPaths(cloneDeep(libraryPaths.value));
@@ -321,6 +426,25 @@ export default defineComponent({
       window.configAPI.setConfig("lang", lang.value);
     }
 
+    function setToDefaultColor() {
+      backgroundColorAngle.value = 30;
+      backgroundStartColor.value = "#c53988";
+      backgroundEndColor.value = "#39c5bb";
+    }
+
+    function applyColorChange() {
+      store.commit("setBackgroundColor", {
+        angle: backgroundColorAngle.value,
+        startColor: backgroundStartColor.value,
+        endColor: backgroundEndColor.value,
+      });
+      window.configAPI.setConfig("backgroundColor", {
+        angle: backgroundColorAngle.value,
+        startColor: backgroundStartColor.value,
+        endColor: backgroundEndColor.value,
+      });
+    }
+
     function changeUpdateCheckOption(value) {
       window.configAPI.setConfig("checkUpdateOnStartup", value);
     }
@@ -346,9 +470,14 @@ export default defineComponent({
       openDirectoryDialog,
       removePathFromLibrary,
       beforeShowDialog,
-      applyChange,
+      applyLibraryChange,
       returnSelf,
       changeLocale,
+      backgroundColorAngle,
+      backgroundStartColor,
+      backgroundEndColor,
+      setToDefaultColor,
+      applyColorChange,
       checkUpdateOnStartup,
       changeUpdateCheckOption,
       openDevTools,

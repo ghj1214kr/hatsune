@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld("metadataAPI", {
   async getMetadataWithCoverArt(trackPath) {
     return ipcRenderer.invoke("getMetadataWithCoverArt", trackPath);
   },
+  async getMetadataForProperties(trackPath) {
+    return ipcRenderer.invoke("getMetadataForProperties", trackPath);
+  },
 });
 
 contextBridge.exposeInMainWorld("fileAPI", {

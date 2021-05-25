@@ -1,23 +1,37 @@
 <template>
   <div style="width: 100vw; height: 100vh; overflow: hidden">
     <div
-      style="
-        background-color: #000;
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-      "
+      :style="{
+        background:
+          'linear-gradient(' +
+          backgroundColor.angle +
+          'deg, ' +
+          backgroundColor.startColor +
+          ', ' +
+          backgroundColor.endColor +
+          ')',
+      }"
+      style="position: relative; width: 100vw; height: 100vh"
     >
       <q-img
         :src="coverArt"
         fit="cover"
         no-transition
         style="
+          position: absolute;
           width: 100vw;
           height: 100vh;
           filter: blur(25px);
           transform: scale(1.1);
-          opacity: 0.7;
+        "
+      />
+      <div
+        v-if="coverArt !== ''"
+        style="
+          position: absolute;
+          background-color: rgba(0, 0, 0, 0.3);
+          width: 100vw;
+          height: 100vh;
         "
       />
     </div>
@@ -95,6 +109,7 @@
       </div>
     </div>
     <setting />
+    <trackProperties />
   </div>
 </template>
 
@@ -110,6 +125,7 @@ import playlist from "components/Playlist";
 import libraryTree from "components/LibraryTree";
 import lyric from "components/Lyric";
 import setting from "components/Setting";
+import trackProperties from "components/TrackProperties";
 import VueSlider from "vue-slider-component";
 import "../css/slider.scss";
 import { isEmpty } from "lodash";
@@ -127,6 +143,7 @@ export default defineComponent({
     libraryTree,
     lyric,
     setting,
+    trackProperties,
     VueSlider,
   },
   setup() {
@@ -205,6 +222,10 @@ export default defineComponent({
     const playlistLoaded = computed(() => store.getters["getPlaylistLoaded"]);
 
     const first = ref(true);
+
+    const backgroundColor = computed(
+      () => store.getters["getBackgroundColor"]
+    );
 
     const lyric = ref({});
     const currentTime = ref(0);
@@ -376,6 +397,12 @@ export default defineComponent({
     });
 
     onMounted(async () => {
+      const backgroundColor = await window.configAPI.getConfig(
+        "backgroundColor"
+      );
+
+      store.commit("setBackgroundColor", backgroundColor);
+
       document
         .getElementById("volume")
         .addEventListener("wheel", volumeScroll, { passive: true });
@@ -559,6 +586,7 @@ export default defineComponent({
       mute,
       volume,
       coverArt,
+      backgroundColor,
       lyric,
       currentTime,
       settingDialog,

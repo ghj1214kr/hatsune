@@ -46,7 +46,7 @@
                   dense
                   class="q-pa-sm"
                 >
-                  <q-item-section side class="q-pr-xs">
+                  <q-item-section avatar class="q-pr-xs">
                     <q-icon name="drive_file_rename_outline" size="sm" />
                   </q-item-section>
                   <q-item-section>{{ $t("rename") }}</q-item-section>
@@ -58,7 +58,7 @@
                   dense
                   class="q-pa-sm"
                 >
-                  <q-item-section side class="q-pr-xs">
+                  <q-item-section avatar class="q-pr-xs">
                     <q-icon name="delete" size="sm" />
                   </q-item-section>
                   <q-item-section>{{ $t("remove") }}</q-item-section>
@@ -90,7 +90,7 @@
     <q-dialog v-model="renamePlaylistDialog">
       <q-card style="min-width: 350px">
         <q-card-section>
-          <div dark class="text-h6">
+          <div class="text-h6">
             {{
               $t("playlistRenameDialogTitle", {
                 playlistNameToRename: playlistNameToRename,
@@ -100,14 +100,13 @@
         </q-card-section>
         <q-card-section class="q-pt-none">
           <q-input
-            color="dark"
             dense
             v-model="newPlaylistName"
             autofocus
             @keyup.enter="renamePlaylistDialogConfirm"
           />
         </q-card-section>
-        <q-card-actions align="right" dark>
+        <q-card-actions align="right">
           <q-btn icon="close" flat :label="$t('cancel')" v-close-popup />
           <q-btn
             icon="check"
@@ -121,7 +120,7 @@
     <q-dialog v-model="removePlaylistDialog">
       <q-card style="min-width: 350px">
         <q-card-section>
-          <div dark class="text-h6">
+          <div class="text-h6">
             {{
               $t("playlistRemoveDialogTitle", {
                 playlistNameToRemove: playlistNameToRemove,
@@ -129,7 +128,7 @@
             }}
           </div>
         </q-card-section>
-        <q-card-actions align="right" dark>
+        <q-card-actions align="right">
           <q-btn flat icon="close" :label="$t('cancel')" v-close-popup />
           <q-btn
             icon="check"
@@ -415,5 +414,11 @@ p {
 }
 .q-tabs__content .q-btn {
   width: 36px;
+}
+.q-item__section--avatar {
+  min-width: 0px;
+}
+.q-item__section--side {
+  padding-right: 4px;
 }
 </style>

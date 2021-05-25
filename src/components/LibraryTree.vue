@@ -202,7 +202,7 @@ export default defineComponent({
         node.$hidden = true;
       });
       walkTreeData(libraryNode.value, (node, index, parent, path) => {
-        if (node.path.toLowerCase().indexOf(input.toLowerCase()) > -1) {
+        if (node.meta.toLowerCase().indexOf(input.toLowerCase()) > -1) {
           node.$hidden = false;
           pathsToChildrenDisplay.push(path);
           pathsToParentDisplay.push(path);

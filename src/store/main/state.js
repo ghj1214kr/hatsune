@@ -34,5 +34,14 @@ export default function () {
     // setting
     settingDialog: false,
     libraryReady: true,
+    backgroundColor: {
+      angle: 0,
+      startColor: "#000",
+      endColor: "#000",
+    },
+
+    // trackProperties
+    trackPropertiesDialog: false,
+    trackPropertiesDialogData: {},
   };
 }

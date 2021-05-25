@@ -102,3 +102,16 @@ export function getSettingDialog(state) {
 export function getLibraryReady(state) {
   return state.libraryReady;
 }
+
+export function getBackgroundColor(state) {
+  return state.backgroundColor;
+}
+
+// trackProperties
+export function getTrackPropertiesDialog(state) {
+  return state.trackPropertiesDialog;
+}
+
+export function getTrackPropertiesDialogData(state) {
+  return state.trackPropertiesDialogData;
+}
