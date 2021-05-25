@@ -316,7 +316,7 @@ ipcMain.handle("getMetadataForProperties", async (event, trackPath) => {
     container: metadata.format.container,
     codec: metadata.format.codec,
     sampleRate: metadata.format.sampleRate,
-    bitrate: metadata.format.bitrate / 1000,
+    bitrate: Math.round(metadata.format.bitrate / 1000),
     codecProfile: metadata.format.codecProfile,
     path: trackPath,
   };
