@@ -14,7 +14,7 @@ Desktop music player
 
 ## Update
 
-Download new version and overwrite to the existing folder 
+Download new version and overwrite to the existing folder.
 
 ## Instructions
 
