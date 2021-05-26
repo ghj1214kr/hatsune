@@ -12,6 +12,10 @@ Desktop music player
 
 [Download from here](https://github.com/ghj1214kr/hatsune/releases/latest).
 
+## Update
+
+Download new version and overwrite to the existing folder 
+
 ## Instructions
 
 ### How to drag window?

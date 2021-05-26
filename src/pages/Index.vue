@@ -397,12 +397,6 @@ export default defineComponent({
     });
 
     onMounted(async () => {
-      const backgroundColor = await window.configAPI.getConfig(
-        "backgroundColor"
-      );
-
-      store.commit("setBackgroundColor", backgroundColor);
-
       document
         .getElementById("volume")
         .addEventListener("wheel", volumeScroll, { passive: true });
@@ -418,6 +412,12 @@ export default defineComponent({
         mutedVolume.value = volume.value;
         volume.value = 0;
       }
+
+      const backgroundColor = await window.configAPI.getConfig(
+        "backgroundColor"
+      );
+
+      store.commit("setBackgroundColor", backgroundColor);
 
       window.addEventListener("focusin", (event) => {
         if (event.target.tabIndex === -2) {

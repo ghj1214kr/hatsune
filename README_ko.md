@@ -12,6 +12,10 @@
 
 [여기서 내려받으세요](https://github.com/ghj1214kr/hatsune/releases/latest).
 
+## 업데이트
+
+새 버전을 내려받아 기존 폴더에 덮어씌우세요.
+
 ## 설명서
 
 ### 창을 어떻게 끌어다 놓죠?
