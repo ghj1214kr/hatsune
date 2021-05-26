@@ -73,15 +73,19 @@ export function setPlayingPlaylistName(state, playingPlaylistName) {
   state.playingPlaylistName = playingPlaylistName;
 }
 
-export function setPlayingList(state, { playlistName, index }) {
+export function setPlayingList(state, { playlistName, index, trackList = [] }) {
   state.playingPlaylistName = playlistName;
-  state.playingList =
-    playlistName === "library"
-      ? Object.freeze(
-          state.selectedLibrary.filter((track) => !track.isAlbumHeader)
-        )
-      : state.playlists.find((playlist) => playlist.name === playlistName)
-          .trackList;
+  if (trackList.length === 0) {
+    state.playingList =
+      playlistName === "library"
+        ? Object.freeze(
+            state.selectedLibrary.filter((track) => !track.isAlbumHeader)
+          )
+        : state.playlists.find((playlist) => playlist.name === playlistName)
+            .trackList;
+  } else {
+    state.playingList = trackList;
+  }
   const indexList = [...Array(state.playingList.length).keys()];
   if (state.shuffle) {
     const firstIndex = indexList.splice(index, 1);

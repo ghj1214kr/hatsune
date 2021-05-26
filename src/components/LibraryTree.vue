@@ -143,7 +143,8 @@ export default defineComponent({
         walkTreeData(node, (node) => {
           node.$folded = true;
         });
-        window.configAPI.setConfig("expandedNode", path.splice(-1, 1));
+        path.splice(-1, 1);
+        window.configAPI.setConfig("expandedNode", path);
       } else {
         foldAll(libraryNode.value);
         for (const { node } of treeRef.value.iteratePath(path)) {
@@ -183,6 +184,9 @@ export default defineComponent({
           playlistName: "library",
           index: 0,
         });
+
+        window.configAPI.setConfig("playingNodePath", node.path);
+        
         delete clickedNode.value[node.path];
       }
     }

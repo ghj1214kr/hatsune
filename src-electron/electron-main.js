@@ -49,6 +49,7 @@ const store = new Store({
     expandedNode: [],
     selectedNodePath: "",
     selectedPlaylistName: "library",
+    playingNodePath: "",
     playingPlaylistName: "library",
     playingPath: "",
   },

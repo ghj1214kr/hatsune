@@ -188,6 +188,9 @@ export default defineComponent({
           playlistName: store.getters["getSelectedPlaylistName"],
           index: index.value,
         });
+        if(store.getters["getSelectedPlaylistName"] === "library") {
+          window.configAPI.setConfig("playingNodePath", track.value.path.match(/(.*)[\/\\]/)[1]);
+        }
       }
     }
 

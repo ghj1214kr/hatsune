@@ -223,9 +223,7 @@ export default defineComponent({
 
     const first = ref(true);
 
-    const backgroundColor = computed(
-      () => store.getters["getBackgroundColor"]
-    );
+    const backgroundColor = computed(() => store.getters["getBackgroundColor"]);
 
     const lyric = ref({});
     const currentTime = ref(0);
@@ -335,30 +333,46 @@ export default defineComponent({
     });
 
     watch([libraryLoaded, playlistLoaded], async (newValues) => {
-      let playlistName = "library";
-      let index = -1;
       if (newValues[0] && newValues[1]) {
+        let playlistName = "library";
+        let index = -1;
+        let tracks = [];
+        let isLastPlayingTrackHidden = false;
         try {
           playlistName = await window.configAPI.getConfig(
             "playingPlaylistName"
           );
-          const tracks =
-            playlistName === "library"
-              ? store.getters["getSelectedLibrary"].filter(
-                  (t) => !t.isAlbumHeader
-                )
-              : store.getters["getPlaylists"].find(
-                  (playlist) => playlist.name === playlistName
-                ).trackList;
+          if (playlistName === "library") {
+            const selectedNodePath = await window.configAPI.getConfig(
+              "selectedNodePath"
+            );
+            const playingNodePath = await window.configAPI.getConfig(
+              "playingNodePath"
+            );
+            if (selectedNodePath === playingNodePath) {
+              tracks = store.getters["getSelectedLibrary"].filter(
+                (t) => !t.isAlbumHeader
+              );
+            } else {
+              tracks = (
+                await window.libraryAPI.getSelectedLibrary(playingNodePath)
+              ).filter((t) => !t.isAlbumHeader);
+              isLastPlayingTrackHidden = true;
+            }
+          } else {
+            tracks = store.getters["getPlaylists"].find(
+              (playlist) => playlist.name === playlistName
+            ).trackList;
+          }
           const path = await window.configAPI.getConfig("playingPath");
           index = tracks.findIndex((t) => t.path === path);
         } catch (error) {
-          control.log("???");
         } finally {
           if (index !== -1) {
             store.commit("setPlayingList", {
               playlistName: playlistName,
               index: index,
+              trackList: isLastPlayingTrackHidden ? tracks : [],
             });
           } else {
             first.value = false;
