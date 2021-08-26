@@ -4,7 +4,7 @@
 
 English | [한국어](https://github.com/ghj1214kr/hatsune/blob/main/README_ko.md)
 
-Desktop music player
+Desktop music player made with Quasar Framework
 
 ![Screenshot](screenshot.png)
 
