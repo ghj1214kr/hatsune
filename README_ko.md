@@ -4,7 +4,7 @@
 
 [English](https://github.com/ghj1214kr/hatsune#readme) | 한국어
 
-데스크탑 음악 플레이어
+퀘이사 프레임워크로 만든 데스크탑 음악 플레이어
 
 ![Screenshot](screenshot.png)
 
