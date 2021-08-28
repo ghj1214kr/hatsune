@@ -258,6 +258,7 @@ export default defineComponent({
           .then(() => {
             if (first.value) {
               audio.pause();
+              audio.muted = mute.value;
               first.value = false;
               audio.volume = volume.value / 100;
               audio.currentTime = 0;
@@ -420,7 +421,6 @@ export default defineComponent({
       volume.value = await window.configAPI.getConfig("volume");
       mute.value = await window.configAPI.getConfig("mute");
       audio.volume = volume.value / 100;
-      audio.muted = mute.value;
 
       if (mute.value) {
         mutedVolume.value = volume.value;
@@ -527,6 +527,7 @@ export default defineComponent({
         volume.value = mutedVolume.value;
         mutedVolume.value = 0;
       }
+      audio.volume = volume.value / 100;
       window.configAPI.setConfig("mute", mute.value);
     }
 
@@ -543,20 +544,20 @@ export default defineComponent({
     function volumeScroll(event) {
       if (event.deltaX) {
         return;
-      }
-      if (mute.value) {
+      } else if (mute.value && event.deltaY < 0) {
         mute.value = false;
         audio.muted = mute.value;
-        volume.value = mutedVolume.value;
+        volume.value = 0;
         mutedVolume.value = 0;
+      } else {
+        volume.value = format.between(
+          volume.value + (event.deltaY > 0 ? -5 : 5),
+          0,
+          100
+        );
+        audio.volume = volume.value / 100;
+        window.configAPI.setConfig("volume", volume.value);
       }
-      volume.value = format.between(
-        volume.value + (event.deltaY > 0 ? -5 : 5),
-        0,
-        100
-      );
-      audio.volume = volume.value / 100;
-      window.configAPI.setConfig("volume", volume.value);
     }
 
     function showError(track) {
