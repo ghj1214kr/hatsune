@@ -179,10 +179,10 @@ function createSplash() {
   splashWindow.loadFile("splash.svg");
 
   splashWindow.on("close", () => {
-    if(!mainWindow.isVisible()) {
+    if (!mainWindow.isVisible()) {
       app.quit();
     }
-  })
+  });
 }
 
 function createWindow() {
@@ -226,7 +226,7 @@ function createWindow() {
 }
 
 app.on("ready", () => {
-  if(!process.env.DEBUGGING) {
+  if (!process.env.DEBUGGING) {
     createSplash();
   }
   createWindow();
@@ -247,11 +247,11 @@ app.on("activate", () => {
 ipcMain.on("loaded", () => {
   setTimeout(() => {
     mainWindow.show();
-    if(splashWindow !== undefined) {
+    if (splashWindow !== undefined) {
       splashWindow.destroy();
     }
   }, 3000);
-})
+});
 
 ipcMain.on("minimize", () => {
   mainWindow.minimize();
