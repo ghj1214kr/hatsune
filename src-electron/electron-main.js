@@ -67,6 +67,7 @@ const octokit = new Octokit({
   userAgent: "ghj1214kr/hatsune v" + app.getVersion(),
 });
 
+let splashWindow;
 let mainWindow;
 let database;
 let syncMusicDb;
@@ -165,6 +166,25 @@ async function init() {
     .refresh();
 }
 
+function createSplash() {
+  splashWindow = new BrowserWindow({
+    width: 300,
+    height: 300,
+    useContentSize: true,
+    frame: false,
+    resizable: false,
+    transparent: true,
+  });
+
+  splashWindow.loadFile("splash.svg");
+
+  splashWindow.on("close", () => {
+    if(!mainWindow.isVisible()) {
+      app.quit();
+    }
+  })
+}
+
 function createWindow() {
   /**
    * Initial window options
@@ -175,6 +195,7 @@ function createWindow() {
     useContentSize: true,
     frame: false,
     resizable: false,
+    show: process.env.DEBUGGING ? true : false,
     webPreferences: {
       spellcheck: false,
       contextIsolation: true,
@@ -204,7 +225,12 @@ function createWindow() {
   });
 }
 
-app.on("ready", createWindow);
+app.on("ready", () => {
+  if(!process.env.DEBUGGING) {
+    createSplash();
+  }
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -217,6 +243,15 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+ipcMain.on("loaded", () => {
+  setTimeout(() => {
+    mainWindow.show();
+    if(splashWindow !== undefined) {
+      splashWindow.destroy();
+    }
+  }, 3000);
+})
 
 ipcMain.on("minimize", () => {
   mainWindow.minimize();

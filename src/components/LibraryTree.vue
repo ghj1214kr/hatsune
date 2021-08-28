@@ -100,19 +100,21 @@ export default defineComponent({
       libraryEl.style.height = "665px";
       separatorEl.style.opacity = 0;
 
-      const expandedNode = await window.configAPI.getConfig("expandedNode");
+      try {
+        const expandedNode = await window.configAPI.getConfig("expandedNode");
 
-      for (const { node } of treeRef.value.iteratePath(expandedNode)) {
-        node.$folded = false;
-      }
+        for (const { node } of treeRef.value.iteratePath(expandedNode)) {
+          node.$folded = false;
+        }
 
-      const selectedNode = await window.configAPI.getConfig("selectedNode");
+        const selectedNode = await window.configAPI.getConfig("selectedNode");
 
-      const node = treeRef.value.getNodeByPath(selectedNode);
+        const node = treeRef.value.getNodeByPath(selectedNode);
 
-      if (node !== undefined) {
-        node.selected = true;
-      }
+        if (node !== undefined) {
+          node.selected = true;
+        }
+      } catch (error) {}
     });
 
     window.libraryAPI.receiveLibrary("receiveLibrary", (library) => {
@@ -186,7 +188,7 @@ export default defineComponent({
         });
 
         window.configAPI.setConfig("playingNodePath", node.path);
-        
+
         delete clickedNode.value[node.path];
       }
     }

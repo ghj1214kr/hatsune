@@ -408,6 +408,8 @@ export default defineComponent({
             });
           }
         }
+
+        window.windowAPI.loaded();
       }
     });
 
