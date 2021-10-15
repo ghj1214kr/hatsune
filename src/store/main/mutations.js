@@ -105,7 +105,9 @@ export function setPlayingList(state, { playlistName, index, trackList = [] }) {
 }
 
 export function toPreviousTrack(state) {
-  if (state.playingList.length === 1) {
+  if (state.position > 3) {
+    this.commit("toggleBackToStart");
+  } else if (state.playingList.length === 1) {
     this.commit("toggleBackToStart");
   } else if (state.playingIndex <= 0) {
     if (state.shuffle) {

@@ -264,43 +264,45 @@ export default defineComponent({
               audio.currentTime = 0;
               store.commit("setPosition", 0);
             }
+
+            window.metadataAPI
+              .getMetadataWithCoverArt(track.path)
+              .then((metadata) => {
+                coverArt.value = metadata.coverArt;
+                navigator.mediaSession.metadata = new MediaMetadata({
+                  title: track.title,
+                  artist: track.artist,
+                  album: track.album,
+                  artwork: [{ src: coverArt.value }],
+                });
+                if (Math.abs(track.mtime - metadata.mtime) > 5) {
+                  metadata.coverArt = "";
+                  store.commit("refreshTrackMetadataInPlaylist", metadata);
+                  window.playlistAPI.refreshTrackMetadataInPlaylist(metadata);
+                }
+              });
+
+            window.configAPI.setConfig("playingPath", track.path);
+
+            window.lyricAPI
+              .getLyric(track.path, track.title, track.artist)
+              .then((lyricData) => {
+                lyric.value = lyricData;
+                if (isEmpty(lyric.value)) {
+                  store.commit("setWithLyric", false);
+                } else {
+                  store.commit("setWithLyric", true);
+                }
+              });
           })
           .catch((error) => {
             showError(track);
+            return;
           });
       } catch (error) {
         showError(track);
+        return;
       }
-
-      window.metadataAPI
-        .getMetadataWithCoverArt(track.path)
-        .then((metadata) => {
-          coverArt.value = metadata.coverArt;
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: track.title,
-            artist: track.artist,
-            album: track.album,
-            artwork: [{ src: coverArt.value }],
-          });
-          if (Math.abs(track.mtime - metadata.mtime) > 5) {
-            metadata.coverArt = "";
-            store.commit("refreshTrackMetadataInPlaylist", metadata);
-            window.playlistAPI.refreshTrackMetadataInPlaylist(metadata);
-          }
-        });
-
-      window.configAPI.setConfig("playingPath", track.path);
-
-      window.lyricAPI
-        .getLyric(track.path, track.title, track.artist)
-        .then((lyricData) => {
-          lyric.value = lyricData;
-          if (isEmpty(lyric.value)) {
-            store.commit("setWithLyric", false);
-          } else {
-            store.commit("setWithLyric", true);
-          }
-        });
     });
 
     watch(playingPlaylistName, (playingPlaylistName) => {

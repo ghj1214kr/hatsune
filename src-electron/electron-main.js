@@ -447,7 +447,7 @@ ipcMain.on(
         .prepare("SELECT id FROM trackList WHERE playlist=? AND path=?")
         .get(playlistName, targetTrack.path).id;
     } else {
-      // 버추얼 스크롤을 통해 마지막에 도달했다면
+      // reached the end through virtual scrolling
       newIndex = database
         .prepare(
           "SELECT id FROM trackList WHERE playlist=? AND id=(SELECT MAX(id) FROM trackList)"

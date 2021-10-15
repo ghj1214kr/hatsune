@@ -9,8 +9,22 @@
       :breakpoint="0"
       narrow-indicator
     >
+      <q-tab
+        id="library"
+        name="library"
+        :label="$t('library')"
+        key="library"
+        class="q-px-sm"
+        :style="{
+          'background-color':
+            'library' === playingPlaylistName
+              ? 'rgba(255, 255, 255, .2)'
+              : 'rgba(255, 255, 255, .0)',
+        }"
+      >
+      </q-tab>
       <draggable
-        v-model="playlists"
+        v-model="playlistsWithoutLibrary"
         itemKey="name"
         tag="p"
         :animation="100"
@@ -172,6 +186,10 @@ export default defineComponent({
         store.commit("setPlaylists", value);
       },
     });
+
+    const playlistsWithoutLibrary = computed(
+      () => store.getters["getPlaylistsWithoutLibrary"]
+    );
 
     const selectedPlaylistName = computed({
       get() {
@@ -346,6 +364,13 @@ export default defineComponent({
       }
     }
 
+    function getPlaylistsWithoutLibrary() {
+      console.log(
+        playlists.value.filter((playlist) => playlist.name !== "library")
+      );
+      return playlists.value.filter((playlist) => playlist.name === "library");
+    }
+
     async function init() {
       let allPlaylists = await window.playlistAPI.getAllPlaylists();
 
@@ -388,6 +413,7 @@ export default defineComponent({
 
     return {
       playlists,
+      playlistsWithoutLibrary,
       selectedPlaylistName,
       playingPlaylistName,
       renamePlaylistDialog,
@@ -402,6 +428,7 @@ export default defineComponent({
       removePlaylistDialogConfirm,
       addPlaylist,
       dropOnTab,
+      getPlaylistsWithoutLibrary,
     };
   },
 });

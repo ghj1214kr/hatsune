@@ -69,6 +69,10 @@ export function getPlaylists(state) {
   return state.playlists;
 }
 
+export function getPlaylistsWithoutLibrary(state) {
+  return state.playlists.filter((playlist) => playlist.name !== "library");
+}
+
 export function getSelectedPlaylistName(state) {
   return state.selectedPlaylistName;
 }
