@@ -258,7 +258,7 @@ ipcMain.on("minimize", () => {
 });
 
 ipcMain.on("close", () => {
-  mainWindow.close(); // not working on dev
+  mainWindow.close();
 });
 
 function getMetadata(track) {
