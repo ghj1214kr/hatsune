@@ -24,7 +24,7 @@
       >
       </q-tab>
       <draggable
-        v-model="playlistsWithoutLibrary"
+        v-model="playlists"
         itemKey="name"
         tag="p"
         :animation="100"
@@ -186,10 +186,6 @@ export default defineComponent({
         store.commit("setPlaylists", value);
       },
     });
-
-    const playlistsWithoutLibrary = computed(
-      () => store.getters["getPlaylistsWithoutLibrary"]
-    );
 
     const selectedPlaylistName = computed({
       get() {
@@ -413,7 +409,6 @@ export default defineComponent({
 
     return {
       playlists,
-      playlistsWithoutLibrary,
       selectedPlaylistName,
       playingPlaylistName,
       renamePlaylistDialog,

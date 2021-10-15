@@ -112,10 +112,6 @@ async function init() {
     )
     .run();
 
-  if (database.prepare("SELECT * FROM playlists").all().length === 0) {
-    database.prepare("INSERT INTO playlists VALUES(1,'library')").run();
-  }
-
   database
     .prepare(
       "CREATE TABLE IF NOT EXISTS libraryPaths(id INTEGER NOT NULL UNIQUE," +

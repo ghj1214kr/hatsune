@@ -81,9 +81,9 @@ export default defineComponent({
       const titleWidth = textWidthCalc(track.title, 50);
       const artistWidth = textWidthCalc(track.artist, 30);
       const albumWidth = textWidthCalc(track.album, 30);
-      titleOverflow.value = titleWidth > 420;
-      artistOverflow.value = artistWidth > 420;
-      albumOverflow.value = albumWidth > 420;
+      titleOverflow.value = titleWidth > 410;
+      artistOverflow.value = artistWidth > 410;
+      albumOverflow.value = albumWidth > 410;
       if (titleOverflow.value) {
         title.value = track.title + " / " + track.title + " / ";
       }

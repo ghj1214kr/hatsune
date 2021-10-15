@@ -36,12 +36,13 @@ export default defineComponent({
   components: {
     trackItem: TrackItemComponent,
   },
-  setup() {
+  props: {
+    name: String,
+  },
+  setup(props) {
     const store = useStore();
 
-    const playlistName = computed(
-      () => store.getters["getSelectedPlaylistName"]
-    );
+    const playlistName = ref(props.name);
 
     const trackList = computed(() =>
       store.getters["getTrackListFromPlaylist"](playlistName.value)
