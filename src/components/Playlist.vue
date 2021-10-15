@@ -266,6 +266,7 @@ export default defineComponent({
           type: "warning",
           message: $t("alreadyExistsPlaylistName"),
           timeout: 3000,
+          textColor: "white",
         });
         return;
       } else if (newPlaylistName.value === "") {
@@ -273,6 +274,7 @@ export default defineComponent({
           type: "warning",
           message: $t("enterPlaylistName"),
           timeout: 3000,
+          textColor: "white",
         });
         return;
       }

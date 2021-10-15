@@ -354,6 +354,7 @@ export default defineComponent({
             type: "warning",
             message: $t("alreadyRegisteredDirectory"),
             timeout: 3000,
+            textColor: "white",
           });
         } else {
           libraryPaths.value.push(directoryPath);

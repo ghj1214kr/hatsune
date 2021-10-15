@@ -145,7 +145,7 @@ export default defineComponent({
     transform: translate(0%, 0);
   }
   100% {
-    transform: translate(-50.4%, 0);
+    transform: translate(-50.6%, 0);
   }
 }
 
