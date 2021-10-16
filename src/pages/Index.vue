@@ -282,6 +282,10 @@ export default defineComponent({
                 }
               });
 
+            window.configAPI.setConfig(
+              "playingPlaylistName",
+              playingPlaylistName
+            );
             window.configAPI.setConfig("playingPath", track.path);
 
             window.lyricAPI
@@ -303,10 +307,6 @@ export default defineComponent({
         showError(track);
         return;
       }
-    });
-
-    watch(playingPlaylistName, (playingPlaylistName) => {
-      window.configAPI.setConfig("playingPlaylistName", playingPlaylistName);
     });
 
     watch(playing, (playing) => {
