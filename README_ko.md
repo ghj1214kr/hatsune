@@ -26,14 +26,14 @@
 
 ### 키보드 단축키
 
-- <kbd>Space</kbd> 또는 <kbd>Enter</kbd> : 재생/멈춤   
-- <kbd>L</kbd> : 1곡 반복 전환   
-- <kbd>S</kbd> : 무작위 섞기 전환   
+- <kbd>Space</kbd> 또는 <kbd>Enter</kbd> : 재생/멈춤
+- <kbd>L</kbd> : 1곡 반복 전환
+- <kbd>S</kbd> : 무작위 섞기 전환
 - <kbd>M</kbd> : 음소거 전환  
-- <kbd><</kbd> : 이전 곡   
-- <kbd>></kbd> : 다음 곡   
-- <kbd>↑</kbd> : 음량 높이기   
-- <kbd>↓</kbd> : 음량 낮추기   
+- <kbd><</kbd> : 이전 곡
+- <kbd>></kbd> : 다음 곡
+- <kbd>↑</kbd> : 음량 높이기
+- <kbd>↓</kbd> : 음량 낮추기
 - <kbd>←</kbd> : 5초 이전으로 탐색  
 - <kbd>→</kbd> : 5초 다음으로 탐색  
 

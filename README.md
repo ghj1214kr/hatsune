@@ -26,14 +26,14 @@ Drag the marked area.
 
 ### Keyboard shortcuts
 
-- <kbd>Space</kbd> or <kbd>Enter</kbd> : Play/Pause   
-- <kbd>L</kbd> : Toggle loop   
-- <kbd>S</kbd> : Toggle shuffle   
-- <kbd>M</kbd> : Toggle mute   
-- <kbd><</kbd> : Previous track   
-- <kbd>></kbd> : Next track   
-- <kbd>↑</kbd> : Volume up   
-- <kbd>↓</kbd> : Volume down   
+- <kbd>Space</kbd> or <kbd>Enter</kbd> : Play/Pause
+- <kbd>L</kbd> : Toggle loop
+- <kbd>S</kbd> : Toggle shuffle
+- <kbd>M</kbd> : Toggle mute
+- <kbd><</kbd> : Previous track
+- <kbd>></kbd> : Next track
+- <kbd>↑</kbd> : Volume up
+- <kbd>↓</kbd> : Volume down
 - <kbd>←</kbd> : Seek backward 5 seconds  
 - <kbd>→</kbd> : Seek forward 5 seconds  
 
@@ -43,7 +43,7 @@ Right-click on cover art or playing track information to copy it to the clipboar
 
 ### Something is going wrong!
 
-Press <kbd>Ctrl</kbd> + <kbd>R</kbd>. Player will be refreshed. 
+Press <kbd>Ctrl</kbd> + <kbd>R</kbd>. Player will be refreshed.
 
 ## Install the dependencies
 ```bash

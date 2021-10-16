@@ -325,8 +325,13 @@ export function addPlaylist(state, playlistName) {
 }
 
 export function setLoadingStatusToPlaylist(state, { playlistName, loading }) {
-  state.playlists.find((playlist) => playlist.name === playlistName).loading =
-    loading;
+  if (
+    state.playlists.find((playlist) => playlist.name === playlistName) !==
+    undefined
+  ) {
+    state.playlists.find((playlist) => playlist.name === playlistName).loading =
+      loading;
+  }
 }
 
 export function toggleInfoChanged(state) {

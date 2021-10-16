@@ -89,8 +89,13 @@ export function getNextSelectedPlaylistName(state) {
 }
 
 export function getTrackListFromPlaylist(state) {
-  return (playlistName) =>
-    state.playlists.find((x) => x.name === playlistName).trackList;
+  return (playlistName) => {
+    if (state.playlists.find((x) => x.name === playlistName) !== undefined) {
+      return state.playlists.find((x) => x.name === playlistName).trackList;
+    } else {
+      return [];
+    }
+  };
 }
 
 export function getLoadingStatusFromPlaylist(state) {

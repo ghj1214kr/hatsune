@@ -97,6 +97,7 @@
       <tracklist
         v-for="playlist in playlists"
         :name="playlist.name"
+        :playlistNameProp="playlist.name"
         :key="playlist.name"
       />
     </q-tab-panels>
