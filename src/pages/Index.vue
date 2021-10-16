@@ -284,7 +284,7 @@ export default defineComponent({
 
             window.configAPI.setConfig(
               "playingPlaylistName",
-              playingPlaylistName
+              playingPlaylistName.value
             );
             window.configAPI.setConfig("playingPath", track.path);
 
