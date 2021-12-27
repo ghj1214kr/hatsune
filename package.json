@@ -16,7 +16,6 @@
     "@kikopalomares/is-audio": "^0.0.4",
     "@octokit/rest": "^18.12.0",
     "@quasar/extras": "^1.12.2",
-    "alsong": "^3.0.1",
     "audio-extensions": "^0.0.0",
     "better-sqlite3": "^7.4.5",
     "core-js": "^3.20.1",
