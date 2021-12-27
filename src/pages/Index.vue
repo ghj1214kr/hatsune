@@ -12,7 +12,16 @@
           ')',
       }"
       style="position: relative; width: 100vw; height: 100vh"
-    >
+    > 
+      <div
+        v-if="coverArt !== ''"
+        style="
+          position: absolute;
+          background-color: rgba(128, 128, 128, 1.0);
+          width: 100vw;
+          height: 100vh;
+        "
+      />
       <q-img
         :src="coverArt"
         fit="cover"
@@ -22,7 +31,6 @@
           width: 100vw;
           height: 100vh;
           filter: blur(25px);
-          transform: scale(1.1);
         "
       />
       <div
