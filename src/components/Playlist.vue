@@ -312,8 +312,7 @@ export default defineComponent({
       if (playlistNameToRemove.value === selectedPlaylistName.value) {
         const nextSelectedPlaylistName =
           store.getters["getNextSelectedPlaylistName"];
-        await store.commit(
-          // without await, error occurs because remove playlist is faster than playlist switching
+        store.commit(
           "setSelectedPlaylistName",
           nextSelectedPlaylistName
         );
@@ -364,9 +363,6 @@ export default defineComponent({
     }
 
     function getPlaylistsWithoutLibrary() {
-      console.log(
-        playlists.value.filter((playlist) => playlist.name !== "library")
-      );
       return playlists.value.filter((playlist) => playlist.name === "library");
     }
 

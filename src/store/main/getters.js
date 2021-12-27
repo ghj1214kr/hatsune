@@ -84,7 +84,11 @@ export function getNextSelectedPlaylistName(state) {
   try {
     return state.playlists[index + 1].name;
   } catch (error) {
-    return state.playlists[index - 1].name;
+    if(state.playlists.length == 1) {
+      return "library";
+    } else {
+      return state.playlists[index - 1].name;
+    }
   }
 }
 
