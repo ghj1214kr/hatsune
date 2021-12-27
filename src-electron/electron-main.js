@@ -169,6 +169,7 @@ function createSplash() {
     useContentSize: true,
     frame: false,
     resizable: false,
+    fullscreen: false,
     transparent: true,
   });
 
@@ -191,6 +192,7 @@ function createWindow() {
     useContentSize: true,
     frame: false,
     resizable: false,
+    fullscreen: false,
     show: process.env.DEBUGGING ? true : false,
     webPreferences: {
       spellcheck: false,

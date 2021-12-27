@@ -133,7 +133,7 @@ import hotkeys from "hotkeys-js";
 import { useI18n } from "vue-i18n";
 
 export default defineComponent({
-  name: "Index",
+  name: "IndexPage",
   components: {
     coverArt,
     info,
