@@ -231,9 +231,7 @@ app.on("ready", () => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on("activate", () => {
@@ -248,7 +246,7 @@ ipcMain.on("loaded", () => {
     if (splashWindow !== undefined) {
       splashWindow.destroy();
     }
-  }, 3000);
+  }, 1000);
 });
 
 ipcMain.on("minimize", () => {

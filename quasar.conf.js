@@ -111,7 +111,7 @@ module.exports = configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
     electron: {
-      bundler: "packager", // 'packager' or 'builder'
+      bundler: "builder", // 'packager' or 'builder'
 
       packager: {
         // https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
@@ -139,7 +139,11 @@ module.exports = configure(function (/* ctx */) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: "hatsune",
+        appId: "com.ghj1214kr.hatsune",
+
+        productName: "Hatsune",
+
+        copyright: "Copyright © 2021 ghj1214kr",
       },
 
       // "chain" is a webpack-chain object https://github.com/neutrinojs/webpack-chain
