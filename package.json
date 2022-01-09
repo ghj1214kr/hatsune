@@ -1,6 +1,6 @@
 {
   "name": "hatsune",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Desktop music player",
   "productName": "Hatsune",
   "author": "ghj1214kr",
@@ -33,6 +33,7 @@
     "sync-music-db-bs3": "^1.2.2",
     "vue-i18n": "^9.2.0-beta.26",
     "vue-slider-component": "^4.0.0-beta.5",
+    "vue3-marquee": "^2.0.2-beta",
     "vuedraggable": "^4.1.0",
     "vuex": "^4.0.2"
   },

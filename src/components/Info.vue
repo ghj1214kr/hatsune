@@ -1,28 +1,37 @@
 <template>
   <div style="overflow: hidden; height: 150px; transform: translate(0, -5px)">
     <div
-      ref="titleRef"
-      :class="titleOverflow ? 'title' : ''"
-      class="q-mx-auto text-italic text-no-wrap"
+      class="q-mx-auto text-italic"
       style="color: white; font-size: 50px; width: fit-content; height: 66px"
     >
-      {{ title }}
+      <vue3-marquee v-if="titleOverflow" :duration="titleDuration">
+        {{ title }}
+      </vue3-marquee>
+      <div v-else>
+        {{ title }}
+      </div>
     </div>
     <div
-      ref="artistRef"
-      :class="artistOverflow ? 'artist' : ''"
-      class="q-mx-auto text-italic text-no-wrap"
+      class="q-mx-auto text-italic"
       style="color: white; font-size: 30px; width: fit-content; height: 42px"
     >
-      {{ artist }}
+      <vue3-marquee v-if="artistOverflow" :duration="artistDuration">
+        {{ artist }}
+      </vue3-marquee>
+      <div v-else>
+        {{ artist }}
+      </div>
     </div>
     <div
-      ref="albumRef"
-      :class="albumOverflow ? 'album' : ''"
-      class="q-mx-auto text-italic text-no-wrap"
-      style="color: white; font-size: 30px; width: fit-content; height: 40px"
+      class="q-mx-auto text-italic"
+      style="color: white; font-size: 30px; width: fit-content; height: 42px"
     >
-      {{ album }}
+      <vue3-marquee v-if="albumOverflow" :duration="albumDuration">
+        {{ album }}
+      </vue3-marquee>
+      <div v-else>
+        {{ album }}
+      </div>
     </div>
     <q-menu touch-position context-menu>
       <q-list dense>
@@ -39,9 +48,13 @@ import { useQuasar } from "quasar";
 import { defineComponent, ref, computed, watch } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
+import Vue3Marquee from "vue3-marquee";
 
 export default defineComponent({
   name: "InfoComponent",
+  components: {
+    Vue3Marquee,
+  },
   setup() {
     const store = useStore();
     const $q = useQuasar();
@@ -66,9 +79,9 @@ export default defineComponent({
     const artistOverflow = ref(false);
     const albumOverflow = ref(false);
 
-    const titleRef = ref(null);
-    const artistRef = ref(null);
-    const albumRef = ref(null);
+    const titleDuration = ref(false);
+    const artistDuration = ref(false);
+    const albumDuration = ref(false);
 
     function infoSet(track) {
       title.value = track.title;
@@ -84,18 +97,19 @@ export default defineComponent({
       titleOverflow.value = titleWidth > 410;
       artistOverflow.value = artistWidth > 410;
       albumOverflow.value = albumWidth > 410;
+      // special character (U+200B) is added to the end of the three values below.
       if (titleOverflow.value) {
-        title.value = track.title + " / " + track.title + " / ";
+        title.value = track.title + " / ​";
       }
       if (artistOverflow.value) {
-        artist.value = track.artist + " / " + track.artist + " / ";
+        artist.value = track.artist + " / ​";
       }
       if (albumOverflow.value) {
-        album.value = track.album + " / " + track.album + " / ";
+        album.value = track.album + " / ​";
       }
-      titleRef.value.style.animationDuration = titleWidth / 50 + "s";
-      artistRef.value.style.animationDuration = artistWidth / 50 + "s";
-      albumRef.value.style.animationDuration = albumWidth / 50 + "s";
+      titleDuration.value = titleWidth / 50;
+      artistDuration.value = artistWidth / 50;
+      albumDuration.value = albumWidth / 50;
     }
 
     function textWidthCalc(text, fontSize) {
@@ -123,55 +137,14 @@ export default defineComponent({
       title,
       artist,
       album,
-      titleRef,
-      artistRef,
-      albumRef,
       titleOverflow,
       artistOverflow,
       albumOverflow,
+      titleDuration,
+      artistDuration,
+      albumDuration,
       copyToClipboard,
     };
   },
 });
 </script>
-
-<style scoped>
-.title {
-  animation: marquee_title linear infinite;
-}
-
-@keyframes marquee_title {
-  0% {
-    transform: translate(0%, 0);
-  }
-  100% {
-    transform: translate(-50.6%, 0);
-  }
-}
-
-.artist {
-  animation: marquee_artist linear infinite;
-}
-
-@keyframes marquee_artist {
-  0% {
-    transform: translate(0%, 0);
-  }
-  100% {
-    transform: translate(-50.3%, 0);
-  }
-}
-
-.album {
-  animation: marquee_album linear infinite;
-}
-
-@keyframes marquee_album {
-  0% {
-    transform: translate(0%, 0);
-  }
-  100% {
-    transform: translate(-50.3%, 0);
-  }
-}
-</style>
