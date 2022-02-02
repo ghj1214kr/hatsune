@@ -125,7 +125,7 @@ module.exports = configure(function (/* ctx */) {
         // Windows only
         // win32metadata: { ... }
 
-        appCopyright: "Copyright (c) 2021 ghj1214kr",
+        appCopyright: "Copyright (c) 2022 ghj1214kr",
 
         afterCopy: [
           (buildPath, electronVersion, platform, arch, callback) => {
@@ -143,7 +143,7 @@ module.exports = configure(function (/* ctx */) {
 
         productName: "Hatsune",
 
-        copyright: "Copyright © 2021 ghj1214kr",
+        copyright: "Copyright © 2022 ghj1214kr",
       },
 
       // "chain" is a webpack-chain object https://github.com/neutrinojs/webpack-chain

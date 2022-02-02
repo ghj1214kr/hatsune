@@ -4,9 +4,9 @@
       class="q-mx-auto text-italic"
       style="color: white; font-size: 50px; width: fit-content; height: 66px"
     >
-      <vue3-marquee v-if="titleOverflow" :duration="titleDuration">
+      <MarqueeText v-if="titleOverflow" :key="title" :duration="titleDuration">
         {{ title }}
-      </vue3-marquee>
+      </MarqueeText>
       <div v-else>
         {{ title }}
       </div>
@@ -15,9 +15,9 @@
       class="q-mx-auto text-italic"
       style="color: white; font-size: 30px; width: fit-content; height: 42px"
     >
-      <vue3-marquee v-if="artistOverflow" :duration="artistDuration">
+      <MarqueeText v-if="artistOverflow" :key="artist" :duration="artistDuration">
         {{ artist }}
-      </vue3-marquee>
+      </MarqueeText>
       <div v-else>
         {{ artist }}
       </div>
@@ -26,9 +26,9 @@
       class="q-mx-auto text-italic"
       style="color: white; font-size: 30px; width: fit-content; height: 42px"
     >
-      <vue3-marquee v-if="albumOverflow" :duration="albumDuration">
+      <MarqueeText v-if="albumOverflow" :key="album" :duration="albumDuration">
         {{ album }}
-      </vue3-marquee>
+      </MarqueeText>
       <div v-else>
         {{ album }}
       </div>
@@ -48,12 +48,12 @@ import { useQuasar } from "quasar";
 import { defineComponent, ref, computed, watch } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
-import Vue3Marquee from "vue3-marquee";
+import MarqueeText from "vue-marquee-text-component";
 
 export default defineComponent({
   name: "InfoComponent",
   components: {
-    Vue3Marquee,
+    MarqueeText,
   },
   setup() {
     const store = useStore();
