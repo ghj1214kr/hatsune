@@ -1,10 +1,10 @@
 # Hatsune
-![Quasar Framework](https://img.shields.io/badge/Quasar-Framework-1976D2?style=flat-square&logo=quasar)
+
 ![Github All Releases](https://img.shields.io/github/downloads/ghj1214kr/hatsune/total?color=39c5bb&style=flat-square)
 
 English | [한국어](https://github.com/ghj1214kr/hatsune/blob/main/README_ko.md)
 
-Desktop music player made with Quasar Framework
+Desktop music player
 
 ![Screenshot](screenshot.png)
 
@@ -45,23 +45,33 @@ Right-click on cover art or playing track information to copy it to the clipboar
 
 Press <kbd>Ctrl</kbd> + <kbd>R</kbd>. Player will be refreshed.
 
-## Install the dependencies
+## Recommended IDE Setup
+
+- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+
+## Project Setup
+
+### Install
+
 ```bash
 yarn
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### Development
+
 ```bash
-quasar dev -m electron
+yarn dev
 ```
 
-### Build the app for production
-```bash
-quasar build -m electron
-```
+### Build
 
-### If get an error related to `better-sqlite3`
-`./node_modules/better-sqlite3/build/Release/better_sqlite3.node` exists, delete it first.
 ```bash
-./node_modules/.bin/electron-rebuild
+# For windows
+$ yarn build:win
+
+# For macOS
+$ yarn build:mac
+
+# For Linux
+$ yarn build:linux
 ```

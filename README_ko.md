@@ -1,10 +1,10 @@
 # Hatsune
-![Quasar Framework](https://img.shields.io/badge/Quasar-Framework-1976D2?style=flat-square&logo=quasar)
+
 ![Github All Releases](https://img.shields.io/github/downloads/ghj1214kr/hatsune/total?color=39c5bb&style=flat-square)
 
 [English](https://github.com/ghj1214kr/hatsune#readme) | 한국어
 
-퀘이사 프레임워크로 만든 데스크탑 음악 플레이어
+데스크탑 음악 플레이어
 
 ![Screenshot](screenshot.png)
 
@@ -45,23 +45,33 @@
 
 <kbd>Ctrl</kbd> + <kbd>R</kbd>를 누르세요. 플레이어가 새로고침 됩니다.
 
-## 의존성 설치
+## 권장 IDE 설정
+
+- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+
+## 프로젝트 설정
+
+### 설치
+
 ```bash
 yarn
 ```
 
-### 개발 모드로 시작 (hot-code reloading, error reporting, etc.)
+### 개발
+
 ```bash
-quasar dev -m electron
+yarn dev
 ```
 
 ### 빌드
-```bash
-quasar build -m electron
-```
 
-### `better-sqlite3`와 관련된 오류가 발생한 경우
-`./node_modules/better-sqlite3/build/Release/better_sqlite3.node`가 존재하면 먼저 삭제
 ```bash
-./node_modules/.bin/electron-rebuild
+# For windows
+$ yarn build:win
+
+# For macOS
+$ yarn build:mac
+
+# For Linux
+$ yarn build:linux
 ```
