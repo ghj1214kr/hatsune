@@ -53,7 +53,7 @@
         <q-item-label
           class="text-white q-pr-sm"
           style="
-            width: 34px;
+            width: min-content;
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
