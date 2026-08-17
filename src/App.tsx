@@ -53,7 +53,7 @@ const theme = createTheme({
   },
 });
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const pip = useAtomValue(pipAtom);
 
   const audio = useAtomValue(audioAtom);
@@ -64,7 +64,7 @@ const App: React.FC = () => {
   const muted = useAtomValue(mutedAtom);
   const playingTrack = useAtomValue(getPlayingTrackAtom);
   const playingTrackDuration = useAtomCallback(
-    (get) => get(getPlayingTrackAtom).duration
+    (get) => get(getPlayingTrackAtom).duration,
   );
   const toPreviousTrack = useSetAtom(toPreviousTrackAtom);
   const toNextTrack = useSetAtom(toNextTrackAtom);
@@ -80,7 +80,7 @@ const App: React.FC = () => {
   const isFirstRender = useRef(true);
   const changeTrackDelay = useRef(false);
 
-  const collapsedLayout = useMediaQuery("(max-aspect-ratio: 3/2)");
+  const collapsedLayout = useMediaQuery("(max-aspect-ratio: 4/3)");
 
   useEffect(() => {
     audio.volume = volume;
@@ -102,7 +102,7 @@ const App: React.FC = () => {
       setPosition({
         newPosition: Math.min(
           Math.round(audio.currentTime),
-          playingTrackDuration()
+          playingTrackDuration(),
         ),
         mode: "timeupdate",
       });
@@ -215,10 +215,6 @@ const App: React.FC = () => {
     //   }
     // );
 
-    (async () => {
-      await invoke("refresh_library");
-    })();
-
     return () => {
       store.save();
     };
@@ -243,7 +239,7 @@ const App: React.FC = () => {
           invoke<string>("get_cover_art", { path: playingTrack.path }).then(
             (coverArt: string) => {
               setCoverArt(coverArt);
-            }
+            },
           );
 
           // invoke<string>("get_raw_lyric_from_path", {
@@ -282,7 +278,7 @@ const App: React.FC = () => {
           autoHideDuration={3000}
           preventDuplicate={true}
         >
-          <Box position={"relative"} overflow={"hidden"}>
+          <Box sx={{ position: "relative", overflow: "hidden" }}>
             {coverArt.length > 0 && (
               <img
                 src={coverArt}
@@ -296,14 +292,14 @@ const App: React.FC = () => {
               />
             )}
             <Stack
-              width={"100vw"}
-              height={"100vh"}
-              flex={1}
-              direction={"row"}
-              flexWrap={collapsedLayout ? "wrap" : "nowrap"}
-              padding={pip ? 0 : 1}
+              direction={collapsedLayout ? "column" : "row"}
               spacing={pip ? 0 : 1}
               sx={{
+                padding: pip ? 0 : 1,
+                flex: 1,
+                flexWrap: collapsedLayout ? "wrap" : "nowrap",
+                width: "100vw",
+                height: "100vh",
                 backdropFilter: "blur(25px)",
                 backgroundColor: "rgba(0, 0, 0, 0.3)",
               }}
@@ -324,5 +320,3 @@ const StyledSnackbarProvider = styled(SnackbarProvider)(({ theme }) => ({
     backgroundColor: theme.palette.secondary.main,
   },
 }));
-
-export default App;

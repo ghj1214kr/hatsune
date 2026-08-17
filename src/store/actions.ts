@@ -24,7 +24,7 @@ export const setPlaylistsAtom = atom(
       playlists[index].trackList = trackList;
     }
     set(playlistsAtom, playlists);
-  }
+  },
 );
 
 export const toPreviousTrackAtom = atom(null, (get, set) => {
@@ -43,7 +43,7 @@ export const toPreviousTrackAtom = atom(null, (get, set) => {
     if (get(shuffleAtom)) {
       const tempArray1 = playingIndexList.slice();
       const tempArray2 = [...Array(playingListLength).keys()].filter(
-        (index) => index !== playingIndexList[0]
+        (index) => index !== playingIndexList[0],
       );
       tempArray1.splice(-playingListLength + 1, playingListLength - 1);
       tempArray1.unshift(...shuffleIndexList(tempArray2));
@@ -72,7 +72,7 @@ export const toNextTrackAtom = atom(null, (get, set) => {
       const playingIndexList = get(playingIndexListAtom);
       const tempArray1 = playingIndexList.slice();
       const tempArray2 = [...Array(playingListLength).keys()].filter(
-        (index) => index !== playingIndexList[playingIndexListLength - 1]
+        (index) => index !== playingIndexList[playingIndexListLength - 1],
       );
       tempArray1.splice(0, playingListLength - 1);
       tempArray1.push(...shuffleIndexList(tempArray2));

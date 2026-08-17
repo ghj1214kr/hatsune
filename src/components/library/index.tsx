@@ -37,7 +37,7 @@ import { Lyric } from "./lyric";
 const libraryFilter = (library: LibraryTree[], text: string): LibraryTree[] => {
   const getNodes = (
     result: LibraryTree[],
-    object: LibraryTree
+    object: LibraryTree,
   ): LibraryTree[] => {
     if (object.meta.toLowerCase().includes(text.toLowerCase())) {
       result.push(object);
@@ -75,10 +75,10 @@ export const Library: React.FC<Props> = (props: Props) => {
   const library = useAtomValue(libraryAtom);
   const [filteredLibrary, setFilteredLibrary] = useState<LibraryTree[]>([]);
   const [expendedLibraryNodes, setExpendedLibraryNodes] = useAtom(
-    expendedLibraryNodesAtom
+    expendedLibraryNodesAtom,
   );
   const [selectedLibraryNode, setSelectedLibraryNode] = useAtom(
-    selectedLibraryNodeAtom
+    selectedLibraryNodeAtom,
   );
   // const clickedNodes = useRef<string[]>([]);
 
@@ -95,13 +95,16 @@ export const Library: React.FC<Props> = (props: Props) => {
 
   return (
     <Stack
-      flex={1}
       direction={"column"}
-      minWidth={0}
-      width={props.collapsedLayout ? "calc(50vw - 12px)" : "100%"}
-      height={props.collapsedLayout ? "100%" : "auto"}
-      position={"relative"}
-      display={pip ? "none" : "flex"}
+      sx={{
+        order: props.collapsedLayout ? 2 : 1,
+        position: "relative",
+        display: pip ? "none" : "flex",
+        flex: 1,
+        minWidth: 0,
+        width: props.collapsedLayout ? "calc(50vw - 12px)" : "100%",
+        height: props.collapsedLayout ? "calc(50vh - 12px)" : "auto",
+      }}
     >
       {!libraryLoaded && <Loading />}
       <SearchTextField
@@ -150,10 +153,17 @@ export const Library: React.FC<Props> = (props: Props) => {
             endIcon: MusicNoteIcon,
           }}
           items={convertToTreeItems(
-            searchString.current.length > 0 ? filteredLibrary : library
+            searchString.current.length > 0 ? filteredLibrary : library,
           )}
           slotProps={{
             item: {
+              slotProps: {
+                iconContainer: {
+                  onClick: (event) => {
+                    event.stopPropagation();
+                  },
+                },
+              },
               onDoubleClick: async (event) => {
                 event.stopPropagation();
                 setPlayingNode(selectedLibraryNode);
@@ -162,7 +172,7 @@ export const Library: React.FC<Props> = (props: Props) => {
                   await invoke("get_selected_library", {
                     path: selectedLibraryNode,
                   }),
-                  0
+                  0,
                 );
                 // clickedNodes.current = clickedNodes.current.filter(
                 //   (clickedNode) => clickedNode !== selectedLibraryNode
@@ -175,21 +185,21 @@ export const Library: React.FC<Props> = (props: Props) => {
           expansionTrigger={"iconContainer"}
           onExpandedItemsChange={(
             _event: React.SyntheticEvent | null,
-            nodeIds: string[]
+            nodeIds: string[],
           ) => {
             const removedNode = expendedLibraryNodes.filter(
-              (expandednode) => !nodeIds.includes(expandednode)
+              (expandednode) => !nodeIds.includes(expandednode),
             )[0];
             let newExpandedNodes: string[] = [];
             if (removedNode !== undefined) {
               newExpandedNodes = expendedLibraryNodes.filter(
-                (expandedNode) => !expandedNode.includes(removedNode)
+                (expandedNode) => !expandedNode.includes(removedNode),
               );
             } else {
               newExpandedNodes = [
                 nodeIds[0],
                 ...expendedLibraryNodes.filter((expandedNode) =>
-                  nodeIds[0].includes(expandedNode)
+                  nodeIds[0].includes(expandedNode),
                 ),
               ];
             }
@@ -198,7 +208,7 @@ export const Library: React.FC<Props> = (props: Props) => {
           }}
           onSelectedItemsChange={async (
             _event: React.SyntheticEvent | null,
-            itemId: string | string[] | null
+            itemId: string | string[] | null,
           ) => {
             if (!itemId || Array.isArray(itemId)) {
               return;
@@ -267,6 +277,7 @@ const CustomRichTreeView = styled(RichTreeView)(({ theme }) => ({
     paddingLeft: "8px",
   },
   "& .MuiTreeItem-content": {
+    minWidth: 0,
     padding: 0,
     "&:hover": {
       backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -286,9 +297,13 @@ const CustomRichTreeView = styled(RichTreeView)(({ theme }) => ({
     alignItems: "center",
   },
   "& .MuiTreeItem-content .MuiTreeItem-label": {
+    minWidth: 0,
     paddingTop: "2px",
     paddingBottom: "2px",
     fontSize: "14px",
     paddingLeft: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
 }));

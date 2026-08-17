@@ -8,10 +8,11 @@ import {
   Stack,
   styled,
   Typography,
-  TypographyProps,
 } from "@mui/material";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import Marquee from "react-fast-marquee";
+import _Marquee from "react-fast-marquee";
+
+const Marquee = ((_Marquee as any).default ?? _Marquee) as typeof _Marquee;
 
 import {
   coverArtAtom,
@@ -34,9 +35,9 @@ import RepeatOneIcon from "@mui/icons-material/RepeatOne";
 import RepeatOneOnIcon from "@mui/icons-material/RepeatOneOn";
 import { durationArray } from "../../utils";
 
-const baseTextProperties: TypographyProps = {
+const baseTextProperties = {
   color: "#fff",
-  textAlign: "center",
+  align: "center",
   fontWeight: 200,
   fontStyle: "italic",
   lineHeight: 1.2,
@@ -81,21 +82,21 @@ export const Control: React.FC<Props> = (props: Props) => {
         setTitleMarquee(
           infoBoxRefWidth - 10 < titleRef.current.getBoundingClientRect().width
             ? true
-            : false
+            : false,
         );
       }
       if (artistRef.current) {
         setArtistDuration(
           infoBoxRefWidth - 10 < artistRef.current.getBoundingClientRect().width
             ? true
-            : false
+            : false,
         );
       }
       if (albumRef.current) {
         setAlbumMarquee(
           infoBoxRefWidth - 10 < albumRef.current.getBoundingClientRect().width
             ? true
-            : false
+            : false,
         );
       }
     }
@@ -119,19 +120,24 @@ export const Control: React.FC<Props> = (props: Props) => {
 
   return (
     <Stack
-      position={"relative"}
       direction={"column"}
-      justifyContent={"space-between"}
-      width={
-        pip ? "100%" : props.collapsedLayout ? "calc(50vw - 12px)" : "auto"
-      }
-      height={
-        pip ? "100%" : props.collapsedLayout ? "calc(50vh - 12px)" : "auto"
-      }
       sx={{
+        order: props.collapsedLayout ? 1 : 2,
+        width: pip
+          ? "100%"
+          : props.collapsedLayout
+            ? "calc(100vw - 12px)"
+            : "auto",
+        height: pip
+          ? "100%"
+          : props.collapsedLayout
+            ? "calc(50vh - 12px)"
+            : "auto",
+        position: "relative",
+        justifyContent: "space-between",
         aspectRatio: props.collapsedLayout ? "auto" : "11/18",
+        overflow: "hidden",
       }}
-      overflow={"hidden"}
     >
       <Stack direction={props.collapsedLayout ? "row" : "column"}>
         <Avatar
@@ -164,22 +170,27 @@ export const Control: React.FC<Props> = (props: Props) => {
         <Stack
           ref={infoBoxRef}
           direction={"column"}
-          alignItems={"center"}
-          justifyContent={"space-evenly"}
-          width={"100%"}
-          overflow={"hidden"}
+          sx={{
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-evenly",
+            overflow: "hidden",
+          }}
         >
           {titleMarquee ? (
             <Marquee speed={textScrollSpeed}>
               <InfoText
                 ref={titleRef}
-                fontSize={pip ? "32px" : "min(7vh, 6vw)"}
+                sx={{ fontSize: pip ? "32px" : "min(7vh, 6vw)" }}
               >
                 {playingTrack.title + " / "}
               </InfoText>
             </Marquee>
           ) : (
-            <InfoText ref={titleRef} fontSize={pip ? "32px" : "min(7vh, 6vw)"}>
+            <InfoText
+              ref={titleRef}
+              sx={{ fontSize: pip ? "32px" : "min(7vh, 6vw)" }}
+            >
               {playingTrack.title}
             </InfoText>
           )}
@@ -187,7 +198,7 @@ export const Control: React.FC<Props> = (props: Props) => {
             <Marquee speed={textScrollSpeed}>
               <InfoText
                 ref={artistRef}
-                fontSize={pip ? "18px" : "min(4vh, 3.5vw)"}
+                sx={{ fontSize: pip ? "18px" : "min(4vh, 3.5vw)" }}
               >
                 {playingTrack.artist + " / "}
               </InfoText>
@@ -195,7 +206,7 @@ export const Control: React.FC<Props> = (props: Props) => {
           ) : (
             <InfoText
               ref={artistRef}
-              fontSize={pip ? "18px" : "min(4vh, 3.5vw)"}
+              sx={{ fontSize: pip ? "18px" : "min(4vh, 3.5vw)" }}
             >
               {playingTrack.artist}
             </InfoText>
@@ -205,7 +216,7 @@ export const Control: React.FC<Props> = (props: Props) => {
               <Marquee speed={textScrollSpeed}>
                 <InfoText
                   ref={albumRef}
-                  fontSize={pip ? "18px" : "min(4vh, 3.5vw)"}
+                  sx={{ fontSize: pip ? "18px" : "min(4vh, 3.5vw)" }}
                 >
                   {playingTrack.album + " / "}
                 </InfoText>
@@ -213,7 +224,7 @@ export const Control: React.FC<Props> = (props: Props) => {
             ) : (
               <InfoText
                 ref={albumRef}
-                fontSize={pip ? "18px" : "min(4vh, 3.5vw)"}
+                sx={{ fontSize: pip ? "18px" : "min(4vh, 3.5vw)" }}
               >
                 {playingTrack.album}
               </InfoText>
@@ -221,12 +232,14 @@ export const Control: React.FC<Props> = (props: Props) => {
         </Stack>
       </Stack>
       <Stack
-        position={"absolute"}
-        bottom={0}
-        width={"100%"}
         direction={"column"}
         spacing={pip ? "8px" : props.collapsedLayout ? 2 : "calc(4vh - 16px)"}
-        sx={{ WebkitAppRegion: "no-drag" }}
+        sx={{
+          position: "absolute",
+          bottom: 0,
+          width: "100%",
+          WebkitAppRegion: "no-drag",
+        }}
       >
         <Stack
           direction={"column"}
@@ -246,15 +259,17 @@ export const Control: React.FC<Props> = (props: Props) => {
           }}
         >
           <Stack
-            paddingX={"max(1vh, 8px)"}
             direction={"row"}
-            justifyContent={"space-between"}
+            sx={{
+              paddingX: "max(1vh, 8px)",
+              justifyContent: "space-between",
+            }}
           >
             {(() => {
               const positionArray = durationArray(position.time);
               const totalDurationArray = durationArray(playingTrack.duration);
               const remainingDurationArray = durationArray(
-                playingTrack.duration - position.time
+                playingTrack.duration - position.time,
               );
 
               return (
@@ -290,12 +305,17 @@ export const Control: React.FC<Props> = (props: Props) => {
               );
             })()}
           </Stack>
-          <Box height={pip ? "8px" : 0} paddingX={"1vh"}>
+          <Box
+            sx={{
+              height: pip ? "8px" : 0,
+              paddingX: "1vh",
+            }}
+          >
             <CustomSlider
               min={0}
               max={playingTrack.duration || 0}
               value={position.time}
-              components={{ Thumb: CustomSliderThumb }}
+              slots={{ thumb: CustomSliderThumb }}
               onChange={(_event, value) => {
                 setPosition({ newPosition: value as number, mode: "seeking" });
               }}
@@ -307,10 +327,12 @@ export const Control: React.FC<Props> = (props: Props) => {
           </Box>
         </Stack>
         <Stack
-          paddingX={"1vh"}
-          paddingBottom={"1vh"}
           direction={"row"}
-          justifyContent={"space-between"}
+          sx={{
+            paddingX: "1vh",
+            paddingBottom: "1vh",
+            justifyContent: "space-between",
+          }}
         >
           <ControlButton onClick={() => setShuffle(!shuffle)}>
             {shuffle ? (
@@ -357,14 +379,14 @@ const InfoText = styled(Typography)(
   Object.assign({}, baseTextProperties, {
     width: "fit-content",
     whiteSpace: "pre",
-  }) as unknown as TemplateStringsArray
+  }) as unknown as TemplateStringsArray,
 );
 
 const TimeText = styled(Typography)(
   Object.assign({}, baseTextProperties, {
     letterSpacing: "-0.05em",
     fontVariantNumeric: "tabular-nums",
-  }) as unknown as TemplateStringsArray
+  }) as unknown as TemplateStringsArray,
 );
 
 const ColonText = styled("span")(
@@ -372,7 +394,7 @@ const ColonText = styled("span")(
     letterSpacing: "-0.05em",
     fontVariantNumeric: "normal",
     fontFeatureSettings: "'ss03'",
-  }) as unknown as TemplateStringsArray
+  }) as unknown as TemplateStringsArray,
 );
 
 const CustomSlider = styled(Slider)({

@@ -4,6 +4,7 @@ import {
   Button,
   CircularProgress,
   Dialog,
+  LinearProgress,
   Stack,
   styled,
   ThemeProvider,
@@ -14,6 +15,7 @@ import { useAtom, useSetAtom } from "jotai";
 import { open } from "@tauri-apps/plugin-dialog";
 import { homeDir } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 import { libraryAtom, libraryLoadedAtom } from "../../store/atoms";
 
@@ -24,9 +26,8 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CloseIcon from "@mui/icons-material/Close";
 
 import { whiteTheme } from "../../utils/theme";
-import { LibraryTree } from "../../types";
+import { LibraryScanProgress, LibraryTree } from "../../types";
 import { getVersion } from "@tauri-apps/api/app";
-// import { LibraryTree } from "../../types";
 
 type Props = {
   open: boolean;
@@ -44,6 +45,9 @@ export const Settings: React.FC<Props> = (props: Props) => {
 
   const [libraryPaths, setLibraryPaths] = useState<string[]>([]);
   const [libraryChanged, setLibraryChanged] = useState(false);
+  const [scanProgress, setScanProgress] = useState<LibraryScanProgress | null>(
+    null,
+  );
   const [verison, setVersion] = useState("");
 
   useEffect(() => {
@@ -59,11 +63,22 @@ export const Settings: React.FC<Props> = (props: Props) => {
     (async () => {
       setVersion(await getVersion());
     })();
+
+    let unlisten: (() => void) | undefined;
+    listen<LibraryScanProgress>("library_scan_progress", (event) => {
+      setScanProgress(event.payload);
+    }).then((listener) => {
+      unlisten = listener;
+    });
+
+    return () => {
+      unlisten?.();
+    };
   }, []);
 
   const removeLibraryPath = useCallback((path: string) => {
     setLibraryPaths((prevLibraryPaths) =>
-      prevLibraryPaths.filter((p) => p !== path)
+      prevLibraryPaths.filter((p) => p !== path),
     );
     setLibraryChanged(true);
   }, []);
@@ -71,28 +86,53 @@ export const Settings: React.FC<Props> = (props: Props) => {
   const applyLibraryChange = useCallback(() => {
     if (libraryChanged) {
       setLibraryLoaded(false);
-      invoke("set_library", { libraryPaths }).then(async () => {
-        const library = await invoke<LibraryTree[]>("get_library");
-        await invoke("refresh_allow_directory");
-        setLibrary(library);
-        setTimeout(() => {
+      setScanProgress(null);
+      invoke("set_library", { libraryPaths })
+        .then(async () => {
+          const library = await invoke<LibraryTree[]>("get_library");
+          await invoke("refresh_allow_directory");
+          setLibrary(library);
+          setTimeout(() => {
+            setLibraryLoaded(true);
+            closeSnackbar("libraryLoading");
+            enqueueSnackbar("라이브러리 갱신 완료", { variant: "success" });
+          }, 1000);
+        })
+        .catch((error) => {
           setLibraryLoaded(true);
           closeSnackbar("libraryLoading");
-          enqueueSnackbar("라이브러리 갱신 완료", { variant: "success" });
-        }, 1000);
-      });
+          enqueueSnackbar(`라이브러리 갱신 실패: ${error}`, {
+            variant: "error",
+          });
+        });
       setLibraryChanged(false);
       enqueueSnackbar(
-        <Stack direction={"row"} alignItems={"center"}>
+        <Stack
+          direction={"row"}
+          sx={{
+            alignItems: "center",
+          }}
+        >
           <CircularProgress size={20} sx={{ marginRight: "8px" }} />
           라이브러리 갱신중...
         </Stack>,
-        { persist: true, key: "libraryLoading" }
+        { persist: true, key: "libraryLoading" },
       );
     } else {
       enqueueSnackbar("변경된 내용이 없습니다.", { variant: "info" });
     }
-  }, [libraryChanged]);
+  }, [
+    enqueueSnackbar,
+    libraryChanged,
+    libraryPaths,
+    setLibrary,
+    setLibraryLoaded,
+  ]);
+
+  const progressPercent =
+    scanProgress?.total && scanProgress.total > 0
+      ? Math.min(100, (scanProgress.current / scanProgress.total) * 100)
+      : undefined;
 
   return (
     <ThemeProvider theme={whiteTheme}>
@@ -100,22 +140,32 @@ export const Settings: React.FC<Props> = (props: Props) => {
         <Stack direction={"column"}>
           <Stack
             direction={"column"}
-            height={360}
-            padding={"20px 30px"}
-            spacing={5}
-            position={"relative"}
+            sx={{
+              height: 360,
+              padding: "20px 30px",
+              spacing: 5,
+              position: "relative",
+            }}
           >
             <Stack direction={"column"}>
-              <Typography fontSize={"40px"}>라이브러리</Typography>
+              <Typography
+                sx={{
+                  fontSize: "40px",
+                }}
+              >
+                라이브러리
+              </Typography>
               {libraryPaths.length > 0 ? (
                 libraryPaths.map((path) => (
                   <Stack
                     key={path}
                     direction={"row"}
-                    alignItems={"center"}
-                    justifyContent={"space-between"}
+                    sx={{
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <Typography fontSize={"16px"}>{path}</Typography>
+                    <Typography sx={{ fontSize: "16px" }}>{path}</Typography>
                     <DeleteButton
                       disabled={!libraryLoaded}
                       onClick={() => removeLibraryPath(path)}
@@ -129,9 +179,11 @@ export const Settings: React.FC<Props> = (props: Props) => {
               )}
               <Stack
                 direction={"row"}
-                alignItems={"center"}
-                justifyContent={"end"}
                 spacing={1}
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "end",
+                }}
               >
                 <Button
                   disabled={!libraryLoaded}
@@ -175,17 +227,47 @@ export const Settings: React.FC<Props> = (props: Props) => {
                   </Badge>
                 </Button>
               </Stack>
+              {!libraryLoaded && scanProgress && (
+                <Stack direction={"column"} spacing={0.75} sx={{ mt: 1 }}>
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: "13px" }}>
+                      {scanProgress.message}
+                    </Typography>
+                    <Typography sx={{ fontSize: "12px", opacity: 0.7 }}>
+                      {scanProgress.total
+                        ? `${scanProgress.current}/${scanProgress.total}`
+                        : `${scanProgress.current}개`}
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant={
+                      progressPercent === undefined
+                        ? "indeterminate"
+                        : "determinate"
+                    }
+                    value={progressPercent}
+                  />
+                </Stack>
+              )}
             </Stack>
             <Stack
               direction={"column"}
-              alignItems={"center"}
-              justifyContent={"center"}
               spacing={-3}
+              sx={{
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               <Typography
-                fontSize={"60px"}
-                fontStyle={"italic"}
-                css={{
+                sx={{
+                  fontSize: "60px",
+                  fontStyle: "italic",
                   letterSpacing: "-3px",
                   fontWeight: "bold",
                   rotate: "-14deg",
@@ -194,9 +276,9 @@ export const Settings: React.FC<Props> = (props: Props) => {
                 FirstSound
               </Typography>
               <Typography
-                fontSize={"20px"}
-                fontStyle={"italic"}
-                css={{
+                sx={{
+                  fontSize: "20px",
+                  fontStyle: "italic",
                   letterSpacing: "-2px",
                   fontWeight: "bold",
                   rotate: "-14deg",
@@ -208,12 +290,20 @@ export const Settings: React.FC<Props> = (props: Props) => {
           </Stack>
           <Stack
             direction={"row"}
-            padding={"20px 30px"}
-            alignItems={"center"}
-            justifyContent={"space-between"}
             spacing={2}
+            sx={{
+              padding: "20px 30px",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
           >
-            <Stack direction={"row"} alignItems={"center"} spacing={1}>
+            <Stack
+              direction={"row"}
+              spacing={1}
+              sx={{
+                alignItems: "center",
+              }}
+            >
               <Button
                 autoCapitalize="none"
                 endIcon={<OpenInNewIcon />}

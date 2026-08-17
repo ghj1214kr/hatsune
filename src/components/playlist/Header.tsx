@@ -19,20 +19,32 @@ export const Header: React.FC<Props> = (props: Props) => {
           if (coverArt) {
             setCoverArt(coverArt);
           }
-        }
+        },
       );
   }, []);
 
   return (
-    <Stack direction={"column"} height={itemSizeIncludingDivider}>
+    <Stack
+      direction={"column"}
+      sx={{
+        height: itemSizeIncludingDivider,
+      }}
+    >
       <Stack
         direction={"row"}
-        height={itemSize}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        color={"#fff"}
+        sx={{
+          height: itemSize,
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        <Stack minWidth={0} direction={"row"} alignItems={"center"}>
+        <Stack
+          direction={"row"}
+          sx={{
+            minWidth: 0,
+            alignItems: "center",
+          }}
+        >
           <Avatar
             src={coverArt}
             variant="square"
@@ -46,16 +58,25 @@ export const Header: React.FC<Props> = (props: Props) => {
             {""}
           </Avatar>
           <Typography
-            paddingLeft={1}
-            fontSize={22}
-            overflow={"hidden"}
-            whiteSpace={"nowrap"}
-            textOverflow={"ellipsis"}
+            sx={{
+              paddingLeft: 1,
+              color: "#fff",
+              fontSize: 22,
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+            }}
           >
             {props.title}
           </Typography>
         </Stack>
-        <Typography paddingX={1} fontSize={22}>
+        <Typography
+          sx={{
+            paddingX: 1,
+            color: "#fff",
+            fontSize: 22,
+          }}
+        >
           {props.year}
         </Typography>
       </Stack>

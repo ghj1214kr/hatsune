@@ -29,27 +29,64 @@ export const TrackItem: React.FC<Props> = (props: Props) => {
       }}
       onDoubleClick={props.onDoubleClick}
     >
-      <Stack direction={"column"} width={"100%"}>
-        <Stack direction={"row"} height={itemSize} alignItems={"center"}>
+      <Stack
+        direction={"column"}
+        sx={{
+          width: "100%",
+        }}
+      >
+        <Stack
+          direction={"row"}
+          sx={{
+            height: itemSize,
+            alignItems: "center",
+          }}
+        >
           {props.trackNumber > 0 && (
-            <Typography textAlign={"center"} fontSize={"18px"} width={"32px"}>
+            <Typography
+              align={"center"}
+              sx={{
+                fontSize: "18px",
+                width: "32px",
+              }}
+            >
               {props.trackNumber}
             </Typography>
           )}
           <Stack
-            flex={1}
             direction={"column"}
-            marginLeft={props.trackNumber ? 0 : 1}
-            minWidth={0}
+            sx={{
+              flex: 1,
+              marginLeft: props.trackNumber ? 0 : 1,
+              minWidth: 0,
+            }}
           >
-            <Typography noWrap={true} height={"22px"} minWidth={0}>
+            <Typography
+              noWrap={true}
+              sx={{
+                height: "22px",
+                minWidth: 0,
+              }}
+            >
               {props.title}
             </Typography>
-            <Typography noWrap={true} fontSize={12} minWidth={0}>
+            <Typography
+              noWrap={true}
+              sx={{
+                fontSize: "12px",
+                minWidth: 0,
+              }}
+            >
               {props.artist}
             </Typography>
           </Stack>
-          <Typography paddingX={1}>{durationStr(props.duration)}</Typography>
+          <Typography
+            sx={{
+              paddingX: 1,
+            }}
+          >
+            {durationStr(props.duration)}
+          </Typography>
         </Stack>
         <Divider />
       </Stack>

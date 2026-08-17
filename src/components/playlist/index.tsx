@@ -63,7 +63,7 @@ export const Playlist: React.FC<Props> = (props) => {
   const setPlaylists = useSetAtom(setPlaylistsAtom);
   const selectedPlaylist = useAtomValue(selectedPlaylistAtom);
   const [selectedPlaylistUid, setSelectedPlaylistUid] = useAtom(
-    selectedPlaylistUidAtom
+    selectedPlaylistUidAtom,
   );
   const playingTrack = useAtomValue(getPlayingTrackAtom);
   const playingPlaylistUid = useAtomValue(playingPlaylistUidAtom);
@@ -82,7 +82,7 @@ export const Playlist: React.FC<Props> = (props) => {
 
   const overlayScrollbarsElement = useMemo(
     () => overlayScrollbarsRef.current?.osInstance()?.elements().content,
-    [overlayScrollbarsRef.current?.osInstance()]
+    [overlayScrollbarsRef.current?.osInstance()],
   );
 
   useEffect(() => {
@@ -93,14 +93,17 @@ export const Playlist: React.FC<Props> = (props) => {
 
   return (
     <Stack
-      flex={1}
       direction={"column"}
-      display={pip ? "none" : "flex"}
-      width={props.collapsedLayout ? "calc(50vw - 12px)" : "100%"}
-      height={props.collapsedLayout ? "calc(50vh - 12px)" : "auto"}
-      position={props.collapsedLayout ? "absolute" : "relative"}
-      right={props.collapsedLayout ? "8px" : "auto"}
-      bottom={props.collapsedLayout ? "8px" : "auto"}
+      sx={{
+        order: 3,
+        flex: 1,
+        display: pip ? "none" : "flex",
+        width: props.collapsedLayout ? "calc(50vw - 12px)" : "100%",
+        height: props.collapsedLayout ? "calc(50vh - 12px)" : "auto",
+        position: props.collapsedLayout ? "absolute" : "relative",
+        right: props.collapsedLayout ? "8px" : "auto",
+        bottom: props.collapsedLayout ? "8px" : "auto",
+      }}
     >
       <Stack direction={"row"}>
         <CustomTabs
@@ -180,7 +183,7 @@ export const Playlist: React.FC<Props> = (props) => {
                         setPlayingList(
                           selectedPlaylistUid,
                           selectedPlaylist.trackList,
-                          index
+                          index,
                         );
                       }
                       setPlaying(true);
@@ -191,31 +194,38 @@ export const Playlist: React.FC<Props> = (props) => {
             }}
           />
         ) : (
-          <Box flex={1} />
+          <Box sx={{ flex: 1 }} />
         )}
       </CustomOverlayScrollbars>
       <Divider />
-      <Stack height={"56px"} direction={"row"}>
+      <Stack
+        direction={"row"}
+        sx={{
+          height: "56px",
+        }}
+      >
         <VolumeBox
           onWheel={(event) => {
             muted && setMuted(false);
             const clampedDelta = Math.max(Math.min(-event.deltaY, 0.05), -0.05);
             const newVolume = Math.max(
               Math.min(muted ? clampedDelta : volume + clampedDelta, 1),
-              0
+              0,
             );
             setVolume(newVolume);
           }}
         >
           <Stack
             className={"volume-slider-box"}
-            width={"40px"}
-            height={0}
-            bottom={"40px"}
-            padding={0}
-            borderRadius={"4px 4px 0 0"}
-            alignItems={"center"}
-            position={"absolute"}
+            sx={{
+              position: "absolute",
+              width: "40px",
+              height: 0,
+              bottom: "40px",
+              padding: 0,
+              borderRadius: "4px 4px 0 0",
+              alignItems: "center",
+            }}
           >
             <Slider
               min={0}
@@ -249,8 +259,13 @@ export const Playlist: React.FC<Props> = (props) => {
             {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
           </MenuButton>
         </VolumeBox>
-        <Box data-tauri-drag-region flex={1} />
-        <Stack direction={"row"} padding={"8px"}>
+        <Box data-tauri-drag-region sx={{ flex: 1 }} />
+        <Stack
+          direction={"row"}
+          sx={{
+            padding: "8px",
+          }}
+        >
           <MenuButton onClick={() => setSettingsOpen(true)}>
             <SettingsIcon />
           </MenuButton>
@@ -325,6 +340,9 @@ const VolumeBox = styled(Box)(({ theme }) => ({
   },
   "& .volume-slider-box": {
     transition: "all 0.2s",
+  },
+  "& .MuiSlider-root, & .MuiSlider-thumb, & .MuiSlider-track, & .MuiSlider-rail": {
+    transition: "none",
   },
   "& .volume-button": {
     transition: "color 0.2s",

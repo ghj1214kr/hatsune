@@ -20,7 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    // emotion setting
+    /* Emotion */
     "jsxImportSource": "@emotion/react"
   },
   "include": ["src"],

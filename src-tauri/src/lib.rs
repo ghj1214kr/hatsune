@@ -1,11 +1,12 @@
-mod lyric;
-mod sync_db;
+mod db;
 
 use std::sync::{Arc, OnceLock};
-use tauri::{async_runtime::spawn, Manager};
+
+use tauri::{async_runtime::spawn, Emitter, Manager};
 use tokio::sync::RwLock;
 
-static SYNC_DB: OnceLock<Arc<RwLock<sync_db::SyncDb>>> = OnceLock::new();
+static DB: OnceLock<Arc<RwLock<db::Db>>> = OnceLock::new();
+const LIBRARY_SCAN_PROGRESS_EVENT: &str = "library_scan_progress";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,13 +14,18 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .setup(|_app| {
-            // SyncDb 초기화
+        .setup(|app| {
+            // Db 초기화
             tauri::async_runtime::block_on(async {
-                let sync_db = sync_db::SyncDb::new()
+                let database_path = app
+                    .path()
+                    .app_data_dir()
+                    .expect("Failed to resolve app data directory")
+                    .join("database.db");
+                let db = db::Db::new(database_path)
                     .await
-                    .expect("Failed to initialize SyncDb");
-                SYNC_DB.set(Arc::new(RwLock::new(sync_db))).unwrap();
+                    .expect("Failed to initialize Db");
+                DB.set(Arc::new(RwLock::new(db))).unwrap();
             });
             Ok(())
         })
@@ -31,19 +37,18 @@ pub fn run() {
             get_library,
             set_library,
             get_selected_library,
-            get_playlists,
-            get_raw_lyric_from_path
+            get_playlists
         ])
         .build(tauri::generate_context!())
-        .expect("error while building tauri application");
+        .expect("error while running tauri application");
 
     app.run(|_app_handle, event| {
         spawn(async move {
             match event {
                 tauri::RunEvent::Exit => {
-                    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
-                    let sync_db = sync_db.write().await;
-                    sync_db.close().await.expect("Failed to close sync_db");
+                    let db = DB.get().expect("SyncDb not initialized");
+                    let db = db.write().await;
+                    db.close().await.expect("Failed to close sync_db");
                 }
                 _ => (),
             }
@@ -54,7 +59,7 @@ pub fn run() {
 #[tauri::command]
 async fn refresh_allow_directory(app_handle: tauri::AppHandle) -> Result<(), String> {
     let asset_protocol_scope = app_handle.asset_protocol_scope();
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     sync_db.get_library_paths().iter().for_each(|path| {
         asset_protocol_scope
@@ -65,29 +70,33 @@ async fn refresh_allow_directory(app_handle: tauri::AppHandle) -> Result<(), Str
 }
 
 #[tauri::command]
-async fn refresh_library() -> Result<(), String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+async fn refresh_library(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let mut sync_db = sync_db.write().await;
-    sync_db.refresh_library().await.map_err(|e| e.to_string())
+    let progress = library_scan_progress_callback(app_handle);
+    sync_db
+        .refresh_library(Some(progress))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn get_cover_art(path: String) -> Result<String, String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     sync_db.get_cover_art(path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn get_library_paths() -> Result<Vec<String>, String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     Ok(sync_db.get_library_paths())
 }
 
 #[tauri::command]
-async fn get_library() -> Result<Vec<sync_db::LibraryTree>, String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+async fn get_library() -> Result<Vec<db::LibraryTree>, String> {
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     sync_db
         .build_library_tree()
@@ -96,18 +105,28 @@ async fn get_library() -> Result<Vec<sync_db::LibraryTree>, String> {
 }
 
 #[tauri::command]
-async fn set_library(library_paths: Vec<String>) -> Result<(), String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+async fn set_library(
+    app_handle: tauri::AppHandle,
+    library_paths: Vec<String>,
+) -> Result<(), String> {
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let mut sync_db = sync_db.write().await;
+    let progress = library_scan_progress_callback(app_handle);
     sync_db
-        .set_library(library_paths)
+        .set_library(library_paths, Some(progress))
         .await
         .map_err(|e| e.to_string())
 }
 
+fn library_scan_progress_callback(app_handle: tauri::AppHandle) -> db::ProgressCallback {
+    Arc::new(move |progress| {
+        let _ = app_handle.emit(LIBRARY_SCAN_PROGRESS_EVENT, progress);
+    })
+}
+
 #[tauri::command]
-async fn get_selected_library(path: String) -> Result<Vec<sync_db::Track>, String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+async fn get_selected_library(path: String) -> Result<Vec<db::Track>, String> {
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     sync_db
         .get_selected_library(path)
@@ -116,15 +135,8 @@ async fn get_selected_library(path: String) -> Result<Vec<sync_db::Track>, Strin
 }
 
 #[tauri::command]
-async fn get_playlists() -> Result<Vec<sync_db::Playlist>, String> {
-    let sync_db = SYNC_DB.get().expect("SyncDb not initialized");
+async fn get_playlists() -> Result<Vec<db::Playlist>, String> {
+    let sync_db = DB.get().expect("SyncDb not initialized");
     let sync_db = sync_db.read().await;
     sync_db.get_playlists().await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn get_raw_lyric_from_path(path: String) -> Result<String, String> {
-    Ok(lyric::get_raw_lyric_from_path(&path)
-        .await
-        .unwrap_or_else(|_| String::new()))
 }

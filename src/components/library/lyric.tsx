@@ -13,7 +13,7 @@ export const Lyric: React.FC<Props> = (props: Props) => {
 
   const lyricInReverseOrder = useMemo(
     () => Array.from(lyric.entries()).reverse(),
-    [lyric]
+    [lyric],
   );
 
   const getCurrentLine = useCallback(
@@ -25,16 +25,15 @@ export const Lyric: React.FC<Props> = (props: Props) => {
       }
       return [];
     },
-    [positionInMs]
+    [positionInMs],
   );
 
   return (
     <Stack
-      height={
-        lyric.size === 0 ? "0px" : props.collapsedLayout ? "10vw" : "10vh"
-      }
       color={"#fff"}
       sx={{
+        height:
+          lyric.size === 0 ? "0px" : props.collapsedLayout ? "10vw" : "10vh",
         transition: "height 0.5s",
       }}
     >
@@ -42,22 +41,33 @@ export const Lyric: React.FC<Props> = (props: Props) => {
       {(() => {
         const currentLine = getCurrentLine(lyricInReverseOrder, positionInMs);
         return currentLine.length > 0 ? (
-          <Stack flex={1} justifyContent={"center"}>
+          <Stack
+            sx={{
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
             {currentLine.map((line, index) => (
               <Typography
                 key={index}
-                fontSize={props.collapsedLayout ? "2vw" : "2vh"}
-                textAlign={"center"}
-                overflow={"hidden"}
-                whiteSpace={"nowrap"}
-                textOverflow={"ellipsis"}
+                align={"center"}
+                sx={{
+                  fontSize: props.collapsedLayout ? "2vw" : "2vh",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                }}
               >
                 {line}
               </Typography>
             ))}
           </Stack>
         ) : (
-          <Box flex={1} />
+          <Box
+            sx={{
+              flex: 1,
+            }}
+          />
         );
       })()}
     </Stack>
