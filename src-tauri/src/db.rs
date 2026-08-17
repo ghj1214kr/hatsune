@@ -2,20 +2,20 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fs::Metadata as FsMetadata;
 use std::path::{MAIN_SEPARATOR, MAIN_SEPARATOR_STR, Path, PathBuf};
-use std::sync::mpsc::{Receiver, channel};
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use base64::{Engine as _, engine::general_purpose};
-use glob::{MatchOptions, glob_with};
 use lofty::config::{ParseOptions, ParsingMode};
 use lofty::file::{AudioFile, TaggedFileExt};
 use lofty::probe::Probe;
 use lofty::tag::{Accessor, Tag, TagType};
 use notify::event::{CreateKind, EventKind, MetadataKind, ModifyKind, RemoveKind};
 use notify::{ReadDirectoryChangesWatcher, RecursiveMode};
-use notify_debouncer_full::{DebouncedEvent, Debouncer, FileIdMap, new_debouncer};
+use notify_debouncer_full::{
+    DebounceEventResult, DebouncedEvent, Debouncer, FileIdMap, new_debouncer,
+};
 use serde::Serialize;
 use sqlx::{
     Pool, Row, Sqlite, SqlitePool, query,
@@ -28,12 +28,6 @@ const AUDIO_EXTENSIONS: &[&str] = &[
     "mp4", "amr", "s3m", "3gp", "act", "au", "dct", "dss", "gsm", "m4p", "mmf", "mpc", "ogg",
     "oga", "opus", "ra", "sln", "vox",
 ];
-
-const GLOB_OPTIONS: MatchOptions = MatchOptions {
-    case_sensitive: false,
-    require_literal_separator: false,
-    require_literal_leading_dot: false,
-};
 
 const CREATE_LIBRARY_TABLE: &str = "CREATE TABLE IF NOT EXISTS library(
     id INTEGER PRIMARY KEY,
@@ -97,7 +91,7 @@ const UPSERT_LIBRARY_SQL: &str = "INSERT INTO library
         bitrate = ?10";
 
 type WatchDebouncer = Debouncer<ReadDirectoryChangesWatcher, FileIdMap>;
-type DebouncedEventReceiver = Receiver<Result<Vec<DebouncedEvent>, Vec<notify::Error>>>;
+type DebouncedEventReceiver = tokio::sync::mpsc::UnboundedReceiver<DebounceEventResult>;
 pub type ProgressCallback = Arc<dyn Fn(LibraryScanProgress) + Send + Sync + 'static>;
 
 #[derive(Serialize, Clone)]
@@ -223,12 +217,19 @@ pub struct Track {
 pub struct Playlist {
     name: String,
     uid: String,
+    #[serde(rename = "trackList")]
     tracks: Vec<Track>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CoverArtCacheStamp {
+    track_modified_time: SystemTime,
+    folder_cover: Option<(PathBuf, SystemTime)>,
 }
 
 #[derive(Debug, Clone)]
 struct CoverArtCacheEntry {
-    modified_time: i64,
+    stamp: CoverArtCacheStamp,
     data_url: String,
 }
 
@@ -237,7 +238,6 @@ pub struct Db {
     db_pool: Pool<Sqlite>,
     debouncer: Arc<RwLock<WatchDebouncer>>,
     library_paths: HashSet<String>,
-    modified_time_map: HashMap<String, i64>,
     cover_art_cache: RwLock<HashMap<String, CoverArtCacheEntry>>,
 }
 
@@ -259,11 +259,15 @@ impl Db {
         Self::init_schema(&db_pool).await?;
 
         let library_paths = Self::load_library_paths(&db_pool).await?;
-        let (tx, rx) = channel();
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let debouncer = Arc::new(RwLock::new(new_debouncer(
             Duration::from_secs(3),
             None,
-            tx,
+            move |events| {
+                if tx.send(events).is_err() {
+                    eprintln!("ERROR: File system event receiver has stopped");
+                }
+            },
         )?));
 
         Self::watch_library_paths(&debouncer, &library_paths);
@@ -277,7 +281,6 @@ impl Db {
             db_pool,
             debouncer,
             library_paths: library_paths.into_iter().collect(),
-            modified_time_map: HashMap::new(),
             cover_art_cache: RwLock::new(HashMap::new()),
         })
     }
@@ -291,6 +294,8 @@ impl Db {
     }
 
     async fn init_schema(db_pool: &Pool<Sqlite>) -> Result<()> {
+        let mut transaction = db_pool.begin().await?;
+
         for statement in [
             CREATE_LIBRARY_TABLE,
             CREATE_LIBRARY_PATHS_TABLE,
@@ -299,9 +304,10 @@ impl Db {
             CREATE_TRACKS_PLAYLIST_UID_INDEX,
             CREATE_TRACKS_PLAYLIST_UID_PATH_INDEX,
         ] {
-            query(statement).execute(db_pool).await?;
+            query(statement).execute(&mut *transaction).await?;
         }
 
+        transaction.commit().await?;
         Ok(())
     }
 
@@ -326,19 +332,15 @@ impl Db {
         }
     }
 
-    async fn read_event(db_pool: Pool<Sqlite>, rx: DebouncedEventReceiver) {
-        loop {
-            let events = match rx.recv() {
-                Ok(Ok(events)) => events,
-                Ok(Err(errors)) => {
+    async fn read_event(db_pool: Pool<Sqlite>, mut rx: DebouncedEventReceiver) {
+        while let Some(result) = rx.recv().await {
+            let events = match result {
+                Ok(events) => events,
+                Err(errors) => {
                     for error in errors {
                         eprintln!("ERROR: File system event error: {}", error);
                     }
                     continue;
-                }
-                Err(e) => {
-                    eprintln!("ERROR: Failed to receive events: {}", e);
-                    break;
                 }
             };
 
@@ -481,17 +483,21 @@ impl Db {
     }
 
     pub async fn build_library_tree(&self) -> Result<Vec<LibraryTree>> {
-        let library = query("SELECT path, title, artist, album FROM library ORDER BY path ASC")
-            .fetch_all(&self.db_pool)
-            .await?
-            .into_iter()
-            .map(|row| LibraryRow {
-                path: row.get(0),
-                title: row.get(1),
-                artist: row.get(2),
-                album: row.get(3),
-            })
-            .collect::<Vec<_>>();
+        let library = query(
+            "SELECT path, COALESCE(title, ''), COALESCE(artist, ''), COALESCE(album, '')
+            FROM library
+            ORDER BY path ASC",
+        )
+        .fetch_all(&self.db_pool)
+        .await?
+        .into_iter()
+        .map(|row| LibraryRow {
+            path: row.get(0),
+            title: row.get(1),
+            artist: row.get(2),
+            album: row.get(3),
+        })
+        .collect::<Vec<_>>();
 
         if library.is_empty() {
             return Ok(Vec::new());
@@ -503,7 +509,7 @@ impl Db {
         for library_path in &library_paths {
             let tracks = library
                 .iter()
-                .filter(|track| track.path.starts_with(library_path));
+                .filter(|track| Path::new(&track.path).starts_with(library_path));
 
             if let Some(mut tree) = Self::build_tree_for_tracks(tracks) {
                 Self::collapse_single_child_root(&mut tree);
@@ -584,10 +590,12 @@ impl Db {
     }
 
     fn modified_time_from_metadata(metadata: &FsMetadata) -> Result<i64> {
-        Ok(metadata
+        let seconds = metadata
             .modified()?
             .duration_since(std::time::UNIX_EPOCH)?
-            .as_secs() as i64)
+            .as_secs();
+
+        i64::try_from(seconds).context("File modification time is too large")
     }
 
     async fn collect_modified_time_map(
@@ -611,10 +619,14 @@ impl Db {
         );
 
         for folder_path in folder_paths {
-            for entry in WalkDir::new(folder_path)
-                .into_iter()
-                .filter_map(|entry| entry.ok())
-            {
+            for entry in WalkDir::new(folder_path) {
+                let entry = match entry {
+                    Ok(entry) => entry,
+                    Err(error) => {
+                        eprintln!("ERROR: Failed to scan {}: {}", folder_path, error);
+                        continue;
+                    }
+                };
                 let file_path = entry.path();
 
                 if !entry.file_type().is_file() || !Self::has_audio_extension(file_path) {
@@ -625,13 +637,22 @@ impl Db {
                     continue;
                 };
 
-                modified_time_map.insert(
-                    file_path.to_string(),
-                    Self::modified_time_from_metadata(&entry.metadata()?)?,
-                );
+                let modified_time = match entry
+                    .metadata()
+                    .context("Failed to read file metadata")
+                    .and_then(|metadata| Self::modified_time_from_metadata(&metadata))
+                {
+                    Ok(modified_time) => modified_time,
+                    Err(error) => {
+                        eprintln!("ERROR: Failed to inspect {}: {}", file_path, error);
+                        continue;
+                    }
+                };
+
+                modified_time_map.insert(file_path.to_string(), modified_time);
 
                 let current = modified_time_map.len() as u64;
-                if current == 1 || current % 100 == 0 {
+                if current == 1 || current.is_multiple_of(100) {
                     Self::emit_progress(
                         progress,
                         LibraryScanProgress::new(
@@ -711,7 +732,7 @@ impl Db {
         let total = entries.len() as u64;
 
         for (index, entry) in entries.into_iter().enumerate() {
-            if let Err(e) = query(UPSERT_LIBRARY_SQL)
+            query(UPSERT_LIBRARY_SQL)
                 .bind(&entry.path)
                 .bind(entry.modified_time)
                 .bind(&entry.metadata.title)
@@ -724,15 +745,10 @@ impl Db {
                 .bind(entry.metadata.bitrate)
                 .execute(&mut *transaction)
                 .await
-            {
-                eprintln!(
-                    "ERROR: Failed to upsert library entry {}: {}",
-                    entry.path, e
-                );
-            }
+                .with_context(|| format!("Failed to upsert library entry {}", entry.path))?;
 
             let current = index as u64 + 1;
-            if current == total || current == 1 || current % 50 == 0 {
+            if current == total || current == 1 || current.is_multiple_of(50) {
                 Self::emit_progress(
                     progress.as_ref(),
                     LibraryScanProgress::new(
@@ -769,10 +785,11 @@ impl Db {
         modified_time_map: &HashMap<String, i64>,
         progress: Option<ProgressCallback>,
     ) -> Result<Vec<LibraryEntry>> {
-        let files = modified_time_map
+        let mut files = modified_time_map
             .iter()
             .map(|(path, modified_time)| (path.clone(), *modified_time))
             .collect::<Vec<_>>();
+        files.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 
         tokio::task::spawn_blocking(move || {
             let mut entries = Vec::with_capacity(files.len());
@@ -790,14 +807,26 @@ impl Db {
             );
 
             for (index, (path, modified_time)) in files.into_iter().enumerate() {
+                let current = index as u64 + 1;
                 let metadata = match Self::get_metadata(Path::new(&path)) {
                     Ok(metadata) => metadata,
                     Err(e) => {
                         eprintln!("ERROR: Failed to get metadata for {}: {}", path, e);
+                        if current == total || current == 1 || current.is_multiple_of(25) {
+                            Self::emit_progress(
+                                progress.as_ref(),
+                                LibraryScanProgress::new(
+                                    "metadata",
+                                    current,
+                                    Some(total),
+                                    format!("메타데이터 읽는 중... {}/{}", current, total),
+                                    Some(path),
+                                ),
+                            );
+                        }
                         continue;
                     }
                 };
-                let current = index as u64 + 1;
 
                 entries.push(LibraryEntry {
                     path,
@@ -805,7 +834,7 @@ impl Db {
                     metadata,
                 });
 
-                if current == total || current == 1 || current % 25 == 0 {
+                if current == total || current == 1 || current.is_multiple_of(25) {
                     Self::emit_progress(
                         progress.as_ref(),
                         LibraryScanProgress::new(
@@ -825,13 +854,26 @@ impl Db {
     }
 
     async fn delete_library_folder(db_pool: &Pool<Sqlite>, folder_path: &str) -> Result<()> {
-        query("DELETE FROM library WHERE path = ?1 OR path LIKE ?2")
+        query("DELETE FROM library WHERE path = ?1 OR path LIKE ?2 ESCAPE '!'")
             .bind(folder_path)
-            .bind(format!("{}{}%", folder_path, MAIN_SEPARATOR))
+            .bind(Self::descendant_like_pattern(folder_path))
             .execute(db_pool)
             .await?;
 
         Ok(())
+    }
+
+    fn descendant_like_pattern(path: &str) -> String {
+        let mut path = path.to_string();
+        if !path.ends_with(MAIN_SEPARATOR) {
+            path.push(MAIN_SEPARATOR);
+        }
+
+        let escaped = path
+            .replace('!', "!!")
+            .replace('%', "!%")
+            .replace('_', "!_");
+        format!("{}%", escaped)
     }
 
     pub async fn refresh_library(&mut self, progress: Option<ProgressCallback>) -> Result<()> {
@@ -839,20 +881,28 @@ impl Db {
             progress.as_ref(),
             LibraryScanProgress::new("started", 0, None, "라이브러리 갱신을 시작합니다.", None),
         );
-        self.modified_time_map = Self::collect_modified_time_map(
-            self.library_paths.iter().cloned().collect(),
-            progress.clone(),
-        )
-        .await?;
+        self.sync_library_entries(progress.clone()).await?;
+        Self::emit_progress(
+            progress.as_ref(),
+            LibraryScanProgress::new("completed", 1, Some(1), "라이브러리 갱신 완료", None),
+        );
+        Ok(())
+    }
+
+    async fn sync_library_entries(&self, progress: Option<ProgressCallback>) -> Result<()> {
+        let mut library_paths = self.library_paths.iter().cloned().collect::<Vec<_>>();
+        library_paths.sort();
+        let modified_time_map =
+            Self::collect_modified_time_map(library_paths, progress.clone()).await?;
 
         let stored_modified_time_map = Self::load_library_modified_time_map(&self.db_pool).await?;
-        let stale_paths = stored_modified_time_map
+        let mut stale_paths = stored_modified_time_map
             .keys()
-            .filter(|path| !self.modified_time_map.contains_key(*path))
+            .filter(|path| !modified_time_map.contains_key(*path))
             .cloned()
             .collect::<Vec<_>>();
-        let changed_modified_time_map = self
-            .modified_time_map
+        stale_paths.sort_unstable();
+        let changed_modified_time_map = modified_time_map
             .iter()
             .filter(|(path, modified_time)| {
                 stored_modified_time_map.get(*path) != Some(*modified_time)
@@ -863,17 +913,13 @@ impl Db {
         Self::delete_library_files(&self.db_pool, &stale_paths, progress.clone()).await?;
         Self::upsert_library_entries(&self.db_pool, &changed_modified_time_map, progress.clone())
             .await?;
-        Self::emit_progress(
-            progress.as_ref(),
-            LibraryScanProgress::new("completed", 1, Some(1), "라이브러리 갱신 완료", None),
-        );
         Ok(())
     }
 
     async fn load_library_modified_time_map(
         db_pool: &Pool<Sqlite>,
     ) -> Result<HashMap<String, i64>> {
-        Ok(query("SELECT path, mtime FROM library")
+        Ok(query("SELECT path, COALESCE(mtime, 0) FROM library")
             .fetch_all(db_pool)
             .await?
             .into_iter()
@@ -894,16 +940,14 @@ impl Db {
         let total = paths.len() as u64;
 
         for (index, path) in paths.iter().enumerate() {
-            if let Err(e) = query("DELETE FROM library WHERE path = ?1")
+            query("DELETE FROM library WHERE path = ?1")
                 .bind(path)
                 .execute(&mut *transaction)
                 .await
-            {
-                eprintln!("ERROR: Failed to delete path from library: {}", e);
-            }
+                .with_context(|| format!("Failed to delete library entry {}", path))?;
 
             let current = index as u64 + 1;
-            if current == total || current == 1 || current % 50 == 0 {
+            if current == total || current == 1 || current.is_multiple_of(50) {
                 Self::emit_progress(
                     progress.as_ref(),
                     LibraryScanProgress::new(
@@ -935,16 +979,18 @@ impl Db {
             progress.as_ref(),
             LibraryScanProgress::new("started", 0, None, "라이브러리 변경을 적용합니다.", None),
         );
-        let new_library_paths = folder_paths.iter().cloned().collect::<HashSet<_>>();
-        let added_library_paths = new_library_paths
+        let new_library_paths = folder_paths.into_iter().collect::<HashSet<_>>();
+        let mut added_library_paths = new_library_paths
             .difference(&self.library_paths)
             .cloned()
             .collect::<Vec<_>>();
-        let removed_library_paths = self
+        let mut removed_library_paths = self
             .library_paths
             .difference(&new_library_paths)
             .cloned()
             .collect::<Vec<_>>();
+        added_library_paths.sort();
+        removed_library_paths.sort();
 
         if added_library_paths.is_empty() && removed_library_paths.is_empty() {
             Self::emit_progress(
@@ -954,16 +1000,11 @@ impl Db {
             return Ok(());
         }
 
-        self.update_watched_paths(&added_library_paths, &removed_library_paths);
-        self.remove_library_paths(&removed_library_paths).await;
-        self.add_library_paths(&added_library_paths).await;
-
-        self.library_paths = new_library_paths;
-
-        let added_modified_time_map =
-            Self::collect_modified_time_map(added_library_paths.clone(), progress.clone()).await?;
-        Self::upsert_library_entries(&self.db_pool, &added_modified_time_map, progress.clone())
+        self.persist_library_paths(&added_library_paths, &removed_library_paths)
             .await?;
+        self.update_watched_paths(&added_library_paths, &removed_library_paths);
+        self.library_paths = new_library_paths;
+        self.sync_library_entries(progress.clone()).await?;
         Self::emit_progress(
             progress.as_ref(),
             LibraryScanProgress::new("completed", 1, Some(1), "라이브러리 갱신 완료", None),
@@ -990,46 +1031,44 @@ impl Db {
         }
     }
 
-    async fn remove_library_paths(&self, folder_paths: &[String]) {
-        for folder_path in folder_paths {
-            if let Err(e) = Self::delete_library_folder(&self.db_pool, folder_path).await {
-                eprintln!("ERROR: Failed to delete library entries: {}", e);
-            }
+    async fn persist_library_paths(
+        &self,
+        added_paths: &[String],
+        removed_paths: &[String],
+    ) -> Result<()> {
+        let mut transaction = self.db_pool.begin().await?;
 
-            if let Err(e) = query("DELETE FROM library_paths WHERE path = ?1")
+        for folder_path in removed_paths {
+            query("DELETE FROM library_paths WHERE path = ?1")
                 .bind(folder_path)
-                .execute(&self.db_pool)
+                .execute(&mut *transaction)
                 .await
-            {
-                eprintln!("ERROR: Failed to delete library path: {}", e);
-            }
+                .with_context(|| format!("Failed to delete library path {}", folder_path))?;
         }
+
+        for folder_path in added_paths {
+            query("INSERT INTO library_paths (path) VALUES (?1)")
+                .bind(folder_path)
+                .execute(&mut *transaction)
+                .await
+                .with_context(|| format!("Failed to insert library path {}", folder_path))?;
+        }
+
+        transaction.commit().await?;
+        Ok(())
     }
 
-    async fn add_library_paths(&self, folder_paths: &[String]) {
-        for folder_path in folder_paths {
-            if let Err(e) = query("INSERT INTO library_paths (path) VALUES (?1)")
-                .bind(folder_path)
-                .execute(&self.db_pool)
-                .await
-            {
-                eprintln!("ERROR: Failed to insert library path: {}", e);
-            }
-        }
-    }
-
-    pub async fn get_selected_library(&self, mut path: String) -> Result<Vec<Track>> {
-        if Path::new(&path).is_dir() {
-            path.push(MAIN_SEPARATOR);
-        }
-
+    pub async fn get_selected_library(&self, path: String) -> Result<Vec<Track>> {
         Ok(query(
-            "SELECT path, mtime, title, artist, album, year, track, disk, duration, bitrate
+            "SELECT path, COALESCE(mtime, 0), COALESCE(title, ''), COALESCE(artist, ''),
+                COALESCE(album, ''), COALESCE(year, 0), COALESCE(track, 0), COALESCE(disk, 0),
+                COALESCE(duration, 0), COALESCE(bitrate, 0)
             FROM library
-            WHERE path LIKE ?1
+            WHERE path = ?1 OR path LIKE ?2 ESCAPE '!'
             ORDER BY path ASC",
         )
-        .bind(format!("{}%", path))
+        .bind(&path)
+        .bind(Self::descendant_like_pattern(&path))
         .fetch_all(&self.db_pool)
         .await?
         .into_iter()
@@ -1045,17 +1084,17 @@ impl Db {
 
     pub fn get_cover_art(&self, path_string: String) -> Result<String> {
         let path = Path::new(&path_string);
-        let modified_time = Self::cover_art_cache_stamp(path)?;
+        let stamp = Self::cover_art_cache_stamp(path)?;
 
-        if let Some(cached) = self
+        if let Some(data_url) = self
             .cover_art_cache
             .read()
             .expect("ERROR: Failed to get cover art cache lock")
             .get(&path_string)
+            .filter(|cached| cached.stamp == stamp)
+            .map(|cached| cached.data_url.clone())
         {
-            if cached.modified_time == modified_time {
-                return Ok(cached.data_url.clone());
-            }
+            return Ok(data_url);
         }
 
         let tagged_file = Probe::open(path)?
@@ -1082,7 +1121,7 @@ impl Db {
             .insert(
                 path_string,
                 CoverArtCacheEntry {
-                    modified_time,
+                    stamp,
                     data_url: data_url.clone(),
                 },
             );
@@ -1090,14 +1129,19 @@ impl Db {
         Ok(data_url)
     }
 
-    fn cover_art_cache_stamp(path: &Path) -> Result<i64> {
-        let track_modified_time = Self::get_modified_time(path)?;
-        let folder_cover_modified_time = Self::find_folder_cover_path(path)?
-            .as_deref()
-            .and_then(|path| Self::get_modified_time(path).ok())
-            .unwrap_or(0);
+    fn cover_art_cache_stamp(path: &Path) -> Result<CoverArtCacheStamp> {
+        let track_modified_time = path.metadata()?.modified()?;
+        let folder_cover = Self::find_folder_cover_path(path)?
+            .map(|path| {
+                let modified_time = path.metadata()?.modified()?;
+                Ok::<_, std::io::Error>((path, modified_time))
+            })
+            .transpose()?;
 
-        Ok(track_modified_time.max(folder_cover_modified_time))
+        Ok(CoverArtCacheStamp {
+            track_modified_time,
+            folder_cover,
+        })
     }
 
     fn get_folder_cover_art(path: &Path) -> Result<String> {
@@ -1113,15 +1157,30 @@ impl Db {
         Ok(Self::data_url(cover_art_type, &cover_art_data))
     }
 
-    fn find_folder_cover_path(path: &Path) -> Result<Option<std::path::PathBuf>> {
-        let Some(folder_path) = path.parent().and_then(|path| path.to_str()) else {
+    fn find_folder_cover_path(path: &Path) -> Result<Option<PathBuf>> {
+        let Some(folder_path) = path.parent() else {
             return Ok(None);
         };
 
-        let glob_string = format!("{}{}{}", folder_path, MAIN_SEPARATOR_STR, "cover.*");
-        let mut cover_art_files = glob_with(&glob_string, GLOB_OPTIONS)?;
+        let mut cover_art_files = std::fs::read_dir(folder_path)?
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| {
+                let file_type = entry.file_type().ok()?;
+                let path = entry.path();
+                let is_cover = file_type.is_file()
+                    && path.extension().is_some()
+                    && path
+                        .file_stem()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.eq_ignore_ascii_case("cover"));
+                is_cover.then_some(path)
+            })
+            .collect::<Vec<_>>();
+        cover_art_files.sort_by(|a, b| {
+            natord::compare_ignore_case(&a.to_string_lossy(), &b.to_string_lossy())
+        });
 
-        Ok(cover_art_files.next().transpose()?)
+        Ok(cover_art_files.into_iter().next())
     }
 
     fn data_url(mime_type: String, data: &[u8]) -> String {
@@ -1133,16 +1192,17 @@ impl Db {
     }
 
     pub async fn get_playlists(&self) -> Result<Vec<Playlist>> {
-        let mut playlists = query("SELECT name, uid FROM playlists")
-            .fetch_all(&self.db_pool)
-            .await?
-            .into_iter()
-            .map(|row| Playlist {
-                name: row.get(0),
-                uid: row.get(1),
-                tracks: Vec::new(),
-            })
-            .collect::<Vec<_>>();
+        let mut playlists =
+            query("SELECT name, uid FROM playlists ORDER BY name COLLATE NOCASE, uid")
+                .fetch_all(&self.db_pool)
+                .await?
+                .into_iter()
+                .map(|row| Playlist {
+                    name: row.get(0),
+                    uid: row.get(1),
+                    tracks: Vec::new(),
+                })
+                .collect::<Vec<_>>();
         let playlist_index_by_uid = playlists
             .iter()
             .enumerate()
@@ -1150,14 +1210,17 @@ impl Db {
             .collect::<HashMap<_, _>>();
 
         for track in query(
-            "SELECT playlist_uid, path, mtime, title, artist, album, year, track, disk, duration, bitrate
+            "SELECT playlist_uid, path, COALESCE(mtime, 0), COALESCE(title, ''),
+                COALESCE(artist, ''), COALESCE(album, ''), COALESCE(year, 0),
+                COALESCE(track, 0), COALESCE(disk, 0), COALESCE(duration, 0),
+                COALESCE(bitrate, 0)
             FROM tracks
             ORDER BY playlist_uid ASC, path ASC",
         )
-            .fetch_all(&self.db_pool)
-            .await?
-            .into_iter()
-            .map(|row| Self::track_from_row(row, ""))
+        .fetch_all(&self.db_pool)
+        .await?
+        .into_iter()
+        .map(|row| Self::track_from_row(row, ""))
         {
             if let Some(index) = playlist_index_by_uid.get(&track.playlist_uid) {
                 playlists[*index].tracks.push(track);
@@ -1189,5 +1252,60 @@ impl Db {
             duration: row.get(offset + 8),
             bitrate: row.get(offset + 9),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_extensions_are_case_insensitive() {
+        assert!(Db::has_audio_extension(Path::new("track.MP3")));
+        assert!(!Db::has_audio_extension(Path::new("cover.jpg")));
+        assert!(!Db::has_audio_extension(Path::new("track")));
+    }
+
+    #[test]
+    fn descendant_pattern_escapes_sql_wildcards() {
+        let path = format!("root{}100%_!mix", MAIN_SEPARATOR);
+
+        assert_eq!(
+            Db::descendant_like_pattern(&path),
+            format!("root{}100!%!_!!mix{}%", MAIN_SEPARATOR, MAIN_SEPARATOR)
+        );
+    }
+
+    #[test]
+    fn descendant_pattern_does_not_duplicate_separator() {
+        let path = format!("root{}", MAIN_SEPARATOR);
+
+        assert_eq!(
+            Db::descendant_like_pattern(&path),
+            format!("root{}%", MAIN_SEPARATOR)
+        );
+    }
+
+    #[test]
+    fn path_membership_uses_components_instead_of_string_prefixes() {
+        let root = PathBuf::from("music");
+        let child = root.join("album").join("track.mp3");
+        let sibling = PathBuf::from("music-other").join("track.mp3");
+
+        assert!(child.starts_with(&root));
+        assert!(!sibling.starts_with(&root));
+    }
+
+    #[test]
+    fn playlist_uses_frontend_track_list_field_name() {
+        let playlist = Playlist {
+            name: "Favorites".to_string(),
+            uid: "favorites".to_string(),
+            tracks: Vec::new(),
+        };
+        let serialized = serde_json::to_value(playlist).unwrap();
+
+        assert!(serialized.get("trackList").is_some());
+        assert!(serialized.get("tracks").is_none());
     }
 }
